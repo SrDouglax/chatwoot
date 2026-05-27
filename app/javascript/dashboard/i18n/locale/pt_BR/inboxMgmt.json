@@ -779,6 +779,10 @@
       "WHATSAPP_SECTION_UPDATE_TITLE": "Atualizar Chave de API",
       "WHATSAPP_SECTION_UPDATE_PLACEHOLDER": "Digite a nova chave de API aqui",
       "WHATSAPP_SECTION_UPDATE_BUTTON": "Atualizar",
+      "WHATSAPP_APPEND_AGENT_NAME": {
+        "LABEL": "Incluir nome do agente nas mensagens do WhatsApp",
+        "SUBTITLE": "Quando ativado, o nome do agente que responde será incluído nas mensagens enviadas para os clientes via WhatsApp."
+      },
       "WHATSAPP_EMBEDDED_SIGNUP_TITLE": "Inscrição incorporada do WhatsApp",
       "WHATSAPP_EMBEDDED_SIGNUP_SUBHEADER": "Esta caixa de entrada está conectada através da inscrição incorporada do WhatsApp.",
       "WHATSAPP_EMBEDDED_SIGNUP_DESCRIPTION": "Você pode reconfigurar esta caixa de entrada para atualizar suas configurações do WhatsApp Business.",

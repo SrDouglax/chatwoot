@@ -5,6 +5,10 @@ describe Whatsapp::Providers::Whatsapp360DialogService do
   subject(:service) { described_class.new(whatsapp_channel: whatsapp_channel) }
 
   let!(:whatsapp_channel) { create(:channel_whatsapp, sync_templates: false, validate_provider_config: false) }
+  let(:conversation) { create(:conversation, inbox: whatsapp_channel.inbox) }
+  let(:message) do
+    create(:message, conversation: conversation, message_type: :outgoing, content: 'test', inbox: whatsapp_channel.inbox)
+  end
   let(:response_headers) { { 'Content-Type' => 'application/json' } }
   let(:whatsapp_response) { { messages: [{ id: 'message_id' }] } }
 
@@ -76,6 +80,38 @@ describe Whatsapp::Providers::Whatsapp360DialogService do
           ).to_return(status: 200, body: whatsapp_response.to_json, headers: response_headers)
         expect(service.send_message('+123456789', message)).to eq 'message_id'
       end
+    end
+  end
+
+  describe '#send_message' do
+    it 'uses the provided outgoing content for text messages' do
+      stub_request(:post, 'https://waba.360dialog.io/v1/messages')
+        .with(
+          body: {
+            to: '+123456789',
+            text: { body: "*Pat*:\ntest" },
+            type: 'text'
+          }.to_json
+        )
+        .to_return(status: 200, body: whatsapp_response.to_json, headers: response_headers)
+
+      expect(service.send_message('+123456789', message, outgoing_content: "*Pat*:\ntest")).to eq 'message_id'
+    end
+
+    it 'uses the provided outgoing content for attachment captions' do
+      attachment = message.attachments.new(account_id: message.account_id, file_type: :image)
+      attachment.file.attach(io: Rails.root.join('spec/assets/avatar.png').open, filename: 'avatar.png', content_type: 'image/png')
+
+      stub_request(:post, 'https://waba.360dialog.io/v1/messages')
+        .with do |request|
+          payload = JSON.parse(request.body)
+          payload['to'] == '+123456789' &&
+            payload['type'] == 'image' &&
+            payload.dig('image', 'caption') == "*Pat*:\ntest"
+        end
+        .to_return(status: 200, body: whatsapp_response.to_json, headers: response_headers)
+
+      expect(service.send_message('+123456789', message, outgoing_content: "*Pat*:\ntest")).to eq 'message_id'
     end
   end
 end

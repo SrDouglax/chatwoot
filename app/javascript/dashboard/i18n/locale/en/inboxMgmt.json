@@ -779,6 +779,10 @@
       "WHATSAPP_SECTION_UPDATE_TITLE": "Update API Key",
       "WHATSAPP_SECTION_UPDATE_PLACEHOLDER": "Enter the new API Key here",
       "WHATSAPP_SECTION_UPDATE_BUTTON": "Update",
+      "WHATSAPP_APPEND_AGENT_NAME": {
+        "LABEL": "Prefix agent name in outgoing messages",
+        "SUBTITLE": "When enabled, human-sent WhatsApp session messages add the agent name before the message content."
+      },
       "WHATSAPP_EMBEDDED_SIGNUP_TITLE": "WhatsApp Embedded Signup",
       "WHATSAPP_EMBEDDED_SIGNUP_SUBHEADER": "This inbox is connected through WhatsApp embedded signup.",
       "WHATSAPP_EMBEDDED_SIGNUP_DESCRIPTION": "You can reconfigure this inbox to update your WhatsApp Business settings.",

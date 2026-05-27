@@ -1,12 +1,12 @@
 class Whatsapp::Providers::Whatsapp360DialogService < Whatsapp::Providers::BaseService
-  def send_message(phone_number, message)
+  def send_message(phone_number, message, outgoing_content: message.outgoing_content)
     @message = message
     if message.attachments.present?
-      send_attachment_message(phone_number, message)
+      send_attachment_message(phone_number, message, outgoing_content)
     elsif message.content_type == 'input_select'
       send_interactive_text_message(phone_number, message)
     else
-      send_text_message(phone_number, message)
+      send_text_message(phone_number, message, outgoing_content)
     end
   end
 
@@ -57,13 +57,13 @@ class Whatsapp::Providers::Whatsapp360DialogService < Whatsapp::Providers::BaseS
     ENV.fetch('360DIALOG_BASE_URL', 'https://waba.360dialog.io/v1')
   end
 
-  def send_text_message(phone_number, message)
+  def send_text_message(phone_number, message, outgoing_content)
     response = HTTParty.post(
       "#{api_base_path}/messages",
       headers: api_headers,
       body: {
         to: phone_number,
-        text: { body: message.outgoing_content },
+        text: { body: outgoing_content },
         type: 'text'
       }.to_json
     )
@@ -71,13 +71,13 @@ class Whatsapp::Providers::Whatsapp360DialogService < Whatsapp::Providers::BaseS
     process_response(response, message)
   end
 
-  def send_attachment_message(phone_number, message)
+  def send_attachment_message(phone_number, message, outgoing_content)
     attachment = message.attachments.first
     type = %w[image audio video].include?(attachment.file_type) ? attachment.file_type : 'document'
     type_content = {
       'link': attachment.download_url
     }
-    type_content['caption'] = message.outgoing_content unless %w[audio sticker].include?(type)
+    type_content['caption'] = outgoing_content if outgoing_content.present? && !%w[audio sticker].include?(type)
     type_content['filename'] = attachment.file.filename if type == 'document'
 
     response = HTTParty.post(

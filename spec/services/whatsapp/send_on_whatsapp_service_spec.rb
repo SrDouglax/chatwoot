@@ -72,6 +72,44 @@ describe Whatsapp::SendOnWhatsappService do
         expect(message.reload.source_id).to eq('123456789')
       end
 
+      it 'prefixes human session messages with the agent name when enabled' do
+        whatsapp_channel.update!(provider_config: whatsapp_channel.provider_config.merge('append_agent_name' => true))
+        create(:message, message_type: :incoming, content: 'test',
+                         conversation: conversation, account: conversation.account)
+        agent = create(:user, account: conversation.account, display_name: 'Pat')
+        message = create(:message, message_type: :outgoing, content: 'Need an update',
+                                   conversation: conversation, account: conversation.account, sender: agent)
+
+        stub_request(:post, 'https://waba.360dialog.io/v1/messages')
+          .with(
+            headers: headers,
+            body: { 'to' => '123456789', 'text' => { 'body' => "*Pat*:\nNeed an update" }, 'type' => 'text' }.to_json
+          )
+          .to_return(status: 200, body: success_response, headers: { 'content-type' => 'application/json' })
+
+        described_class.new(message: message).perform
+        expect(message.reload.source_id).to eq('123456789')
+      end
+
+      it 'falls back to the sender name when display_name is blank' do
+        whatsapp_channel.update!(provider_config: whatsapp_channel.provider_config.merge('append_agent_name' => true))
+        create(:message, message_type: :incoming, content: 'test',
+                         conversation: conversation, account: conversation.account)
+        agent = create(:user, account: conversation.account, display_name: nil, name: 'Pat Doe')
+        message = create(:message, message_type: :outgoing, content: 'Need an update',
+                                   conversation: conversation, account: conversation.account, sender: agent)
+
+        stub_request(:post, 'https://waba.360dialog.io/v1/messages')
+          .with(
+            headers: headers,
+            body: { 'to' => '123456789', 'text' => { 'body' => "*Pat Doe*:\nNeed an update" }, 'type' => 'text' }.to_json
+          )
+          .to_return(status: 200, body: success_response, headers: { 'content-type' => 'application/json' })
+
+        described_class.new(message: message).perform
+        expect(message.reload.source_id).to eq('123456789')
+      end
+
       it 'marks message as failed when template name is blank' do
         processor = instance_double(Whatsapp::TemplateProcessorService)
         allow(Whatsapp::TemplateProcessorService).to receive(:new).and_return(processor)
@@ -98,6 +136,7 @@ describe Whatsapp::SendOnWhatsappService do
       end
 
       it 'calls channel.send_template when after 24 hour limit' do
+        whatsapp_channel.update!(provider_config: whatsapp_channel.provider_config.merge('append_agent_name' => true))
         message = create(:message, message_type: :outgoing, content: 'Your package has been shipped. It will be delivered in 3 business days.',
                                    conversation: conversation, additional_attributes: { template_params: template_params },
                                    account: conversation.account)
@@ -308,6 +347,70 @@ describe Whatsapp::SendOnWhatsappService do
           ).to_return(status: 200, body: success_response, headers: { 'content-type' => 'application/json' })
 
         expect { described_class.new(message: message).perform }.not_to raise_error
+      end
+
+      it 'does not prefix messages without a human sender' do
+        whatsapp_channel.update!(provider_config: whatsapp_channel.provider_config.merge('append_agent_name' => true))
+        create(:message, message_type: :incoming, content: 'test',
+                         conversation: conversation, account: conversation.account)
+        message = create(:message, :bot_message, content: 'System update',
+                                   conversation: conversation, account: conversation.account)
+
+        stub_request(:post, 'https://waba.360dialog.io/v1/messages')
+          .with(
+            headers: headers,
+            body: { 'to' => '123456789', 'text' => { 'body' => 'System update' }, 'type' => 'text' }.to_json
+          )
+          .to_return(status: 200, body: success_response, headers: { 'content-type' => 'application/json' })
+
+        described_class.new(message: message).perform
+        expect(message.reload.source_id).to eq('123456789')
+      end
+
+      it 'prefixes attachment captions when enabled' do
+        whatsapp_channel.update!(provider_config: whatsapp_channel.provider_config.merge('append_agent_name' => true))
+        create(:message, message_type: :incoming, content: 'test',
+                         conversation: conversation, account: conversation.account)
+        agent = create(:user, account: conversation.account, display_name: 'Pat')
+        message = create(:message, message_type: :outgoing, content: 'See attachment',
+                                   conversation: conversation, account: conversation.account, sender: agent)
+        attachment = message.attachments.new(account_id: message.account_id, file_type: :image)
+        attachment.file.attach(io: Rails.root.join('spec/assets/avatar.png').open, filename: 'avatar.png', content_type: 'image/png')
+
+        stub_request(:post, 'https://waba.360dialog.io/v1/messages')
+          .with do |request|
+            payload = JSON.parse(request.body)
+            payload['to'] == '123456789' &&
+              payload['type'] == 'image' &&
+              payload.dig('image', 'caption') == "*Pat*:\nSee attachment"
+          end
+          .to_return(status: 200, body: success_response, headers: { 'content-type' => 'application/json' })
+
+        described_class.new(message: message).perform
+        expect(message.reload.source_id).to eq('123456789')
+      end
+
+      it 'does not send the agent name alone when an attachment has no caption' do
+        whatsapp_channel.update!(provider_config: whatsapp_channel.provider_config.merge('append_agent_name' => true))
+        create(:message, message_type: :incoming, content: 'test',
+                         conversation: conversation, account: conversation.account)
+        agent = create(:user, account: conversation.account, display_name: 'Pat')
+        message = create(:message, message_type: :outgoing, content: '',
+                                   conversation: conversation, account: conversation.account, sender: agent)
+        attachment = message.attachments.new(account_id: message.account_id, file_type: :image)
+        attachment.file.attach(io: Rails.root.join('spec/assets/avatar.png').open, filename: 'avatar.png', content_type: 'image/png')
+
+        stub_request(:post, 'https://waba.360dialog.io/v1/messages')
+          .with do |request|
+            payload = JSON.parse(request.body)
+            payload['to'] == '123456789' &&
+              payload['type'] == 'image' &&
+              !payload['image'].key?('caption')
+          end
+          .to_return(status: 200, body: success_response, headers: { 'content-type' => 'application/json' })
+
+        described_class.new(message: message).perform
+        expect(message.reload.source_id).to eq('123456789')
       end
 
       it 'processes template with rich text formatting' do

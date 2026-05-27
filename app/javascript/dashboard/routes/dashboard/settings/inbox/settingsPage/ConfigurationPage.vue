@@ -38,6 +38,8 @@ export default {
     return {
       hmacMandatory: false,
       allowMobileWebview: false,
+      appendAgentName: false,
+      whatsAppProviderConfig: {},
       whatsAppInboxAPIKey: '',
       isRequestingReauthorization: false,
       isSyncingTemplates: false,
@@ -71,6 +73,15 @@ export default {
       if (!this.isSettingDefaults && this.isAWebWidgetInbox)
         this.handleHmacFlag();
     },
+    appendAgentName() {
+      if (
+        !this.isSettingDefaults &&
+        this.isAWhatsAppChannel &&
+        !this.isATwilioChannel
+      ) {
+        this.handleAppendAgentNameFlag();
+      }
+    },
   },
   mounted() {
     this.setDefaults();
@@ -82,6 +93,9 @@ export default {
       this.allowMobileWebview = (
         this.inbox.selected_feature_flags || []
       ).includes('allow_mobile_webview');
+      this.whatsAppProviderConfig = { ...(this.inbox.provider_config || {}) };
+      this.appendAgentName =
+        this.whatsAppProviderConfig.append_agent_name || false;
       this.allowedDomains = this.inbox.allowed_domains || '';
       this.$nextTick(() => {
         this.isSettingDefaults = false;
@@ -105,6 +119,30 @@ export default {
         useAlert(this.$t('INBOX_MGMT.EDIT.API.ERROR_MESSAGE'));
       }
     },
+    async updateWhatsAppProviderConfig(providerConfig) {
+      const previousProviderConfig = { ...this.whatsAppProviderConfig };
+      const nextProviderConfig = {
+        ...this.whatsAppProviderConfig,
+        ...providerConfig,
+      };
+
+      this.whatsAppProviderConfig = nextProviderConfig;
+
+      const payload = {
+        id: this.inbox.id,
+        formData: false,
+        channel: {
+          provider_config: nextProviderConfig,
+        },
+      };
+
+      try {
+        await this.$store.dispatch('inboxes/updateInbox', payload);
+      } catch (error) {
+        this.whatsAppProviderConfig = previousProviderConfig;
+        throw error;
+      }
+    },
     async handleMobileWebviewFlag() {
       try {
         const currentFlags = this.inbox.selected_feature_flags || [];
@@ -122,6 +160,24 @@ export default {
         await this.$store.dispatch('inboxes/updateInbox', payload);
         useAlert(this.$t('INBOX_MGMT.EDIT.API.SUCCESS_MESSAGE'));
       } catch (error) {
+        useAlert(this.$t('INBOX_MGMT.EDIT.API.ERROR_MESSAGE'));
+      }
+    },
+    async handleAppendAgentNameFlag() {
+      const previousAppendAgentName =
+        this.whatsAppProviderConfig.append_agent_name || false;
+
+      try {
+        await this.updateWhatsAppProviderConfig({
+          append_agent_name: this.appendAgentName,
+        });
+        useAlert(this.$t('INBOX_MGMT.EDIT.API.SUCCESS_MESSAGE'));
+      } catch (error) {
+        this.isSettingDefaults = true;
+        this.appendAgentName = previousAppendAgentName;
+        this.$nextTick(() => {
+          this.isSettingDefaults = false;
+        });
         useAlert(this.$t('INBOX_MGMT.EDIT.API.ERROR_MESSAGE'));
       }
     },
@@ -149,18 +205,9 @@ export default {
     },
     async updateWhatsAppInboxAPIKey() {
       try {
-        const payload = {
-          id: this.inbox.id,
-          formData: false,
-          channel: {},
-        };
-
-        payload.channel.provider_config = {
-          ...this.inbox.provider_config,
+        await this.updateWhatsAppProviderConfig({
           api_key: this.whatsAppInboxAPIKey,
-        };
-
-        await this.$store.dispatch('inboxes/updateInbox', payload);
+        });
         useAlert(this.$t('INBOX_MGMT.EDIT.API.SUCCESS_MESSAGE'));
       } catch (error) {
         useAlert(this.$t('INBOX_MGMT.EDIT.API.ERROR_MESSAGE'));
@@ -359,6 +406,16 @@ export default {
   </div>
   <div v-else-if="isAWhatsAppChannel && !isATwilioChannel">
     <div v-if="inbox.provider_config">
+      <SettingsToggleSection
+        v-model="appendAgentName"
+        :header="
+          $t('INBOX_MGMT.SETTINGS_POPUP.WHATSAPP_APPEND_AGENT_NAME.LABEL')
+        "
+        :description="
+          $t('INBOX_MGMT.SETTINGS_POPUP.WHATSAPP_APPEND_AGENT_NAME.SUBTITLE')
+        "
+      />
+
       <!-- Embedded Signup Section -->
       <template v-if="isEmbeddedSignupWhatsApp">
         <SettingsFieldSection

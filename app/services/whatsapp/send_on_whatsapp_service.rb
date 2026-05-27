@@ -38,11 +38,32 @@ class Whatsapp::SendOnWhatsappService < Base::SendOnChannelService
   end
 
   def send_session_message
-    message_id = channel.send_message(message.conversation.contact_inbox.source_id, message)
+    message_id = channel.send_message(
+      message.conversation.contact_inbox.source_id,
+      message,
+      outgoing_content: outgoing_content_for_delivery
+    )
     message.update!(source_id: message_id) if message_id.present?
   end
 
   def template_params
     message.additional_attributes && message.additional_attributes['template_params']
+  end
+
+  def outgoing_content_for_delivery
+    return message.outgoing_content unless should_append_agent_name?
+
+    "*#{agent_name}*:\n#{message.outgoing_content}"
+  end
+
+  def should_append_agent_name?
+    channel.append_agent_name? &&
+      message.sender.is_a?(User) &&
+      message.outgoing_content.present? &&
+      (message.attachments.present? || message.content_type == 'text')
+  end
+
+  def agent_name
+    message.sender.available_name.presence || message.sender.name
   end
 end
