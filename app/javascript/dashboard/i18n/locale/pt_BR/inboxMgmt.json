@@ -758,6 +758,8 @@
       "ENABLE_CONTINUITY_VIA_EMAIL_DISABLED_TEXT": "Este recurso está disponível em um plano pago. Atualize para ativar a continuidade da conversa via e-mail.",
       "LOCK_TO_SINGLE_CONVERSATION": "Roteamento de Conversa",
       "LOCK_TO_SINGLE_CONVERSATION_SUB_TEXT": "Configurar a criação de conversas para contatos existentes",
+      "WARN_ON_EXISTING_CONVERSATION": "Avisar antes de iniciar conversas duplicadas",
+      "WARN_ON_EXISTING_CONVERSATION_SUB_TEXT": "Quando ativado, os agentes serão avisados se o contato selecionado já tiver uma conversa nesta caixa de entrada antes de enviar uma nova mensagem.",
       "INBOX_UPDATE_TITLE": "Configurações da Caixa de Entrada",
       "INBOX_UPDATE_SUB_TEXT": "Atualize suas configurações de caixa de entrada",
       "AUTO_ASSIGNMENT_SUB_TEXT": "Ativar ou desativar a atribuição automática de novas conversas aos agentes adicionados a essa caixa de entrada.",

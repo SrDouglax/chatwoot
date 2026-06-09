@@ -758,6 +758,8 @@
       "ENABLE_CONTINUITY_VIA_EMAIL_DISABLED_TEXT": "This feature is available on a paid plan. Upgrade to enable conversation continuity via email.",
       "LOCK_TO_SINGLE_CONVERSATION": "Conversation Routing",
       "LOCK_TO_SINGLE_CONVERSATION_SUB_TEXT": "Configure conversation creation for existing contacts",
+      "WARN_ON_EXISTING_CONVERSATION": "Avisar antes de iniciar conversas duplicadas",
+      "WARN_ON_EXISTING_CONVERSATION_SUB_TEXT": "Quando ativado, os agentes serão avisados se o contacto selecionado já tiver uma conversa nesta caixa de entrada antes de enviar uma nova mensagem.",
       "INBOX_UPDATE_TITLE": "Configurações da caixa de entrada",
       "INBOX_UPDATE_SUB_TEXT": "Atualize as suas configurações da caixa de entrada",
       "AUTO_ASSIGNMENT_SUB_TEXT": "Ativar ou desativar a atribuição automática de novas conversas aos agentes adicionados a essa caixa de entrada.",

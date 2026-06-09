@@ -611,6 +611,12 @@
       "SUCCESS_MESSAGE": "The message was sent successfully!",
       "ERROR_MESSAGE": "An error occurred while creating the conversation. Please try again later.",
       "NO_INBOX_ALERT": "There are no available inboxes to start a conversation with this contact.",
+      "EXISTING_CONVERSATION": {
+        "TITLE": "A conversa já existe",
+        "DESCRIPTION": "Este contacto já tem uma conversa na caixa de entrada selecionada. Pode ver a conversa mais recente ou enviar esta mensagem mesmo assim.",
+        "VIEW_CONVERSATION": "Ver conversa",
+        "SEND_ANYWAY": "Enviar mesmo assim"
+      },
       "CONTACT_SELECTOR": {
         "LABEL": "Para:",
         "TAG_INPUT_PLACEHOLDER": "Enter at least 2 characters to search by name, email, or phone number",
