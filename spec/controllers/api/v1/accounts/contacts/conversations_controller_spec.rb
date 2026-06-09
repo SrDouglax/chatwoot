@@ -37,6 +37,37 @@ RSpec.describe '/api/v1/accounts/{account.id}/contacts/:id/conversations', type:
 
           expect(json_response['payload'].length).to eq 4
         end
+
+        it 'returns the latest conversation from the selected inbox' do
+          older_conversation = create(
+            :conversation,
+            account: account,
+            inbox: inbox_1,
+            contact: contact,
+            contact_inbox: contact_inbox_1
+          )
+          latest_conversation = create(
+            :conversation,
+            account: account,
+            inbox: inbox_1,
+            contact: contact,
+            contact_inbox: contact_inbox_1
+          )
+          create(:conversation, account: account, inbox: inbox_2, contact: contact, contact_inbox: contact_inbox_2)
+
+          older_conversation.update!(last_activity_at: 2.days.ago)
+          latest_conversation.update!(last_activity_at: 1.hour.from_now)
+
+          get "/api/v1/accounts/#{account.id}/contacts/#{contact.id}/conversations",
+              params: { inbox_id: inbox_1.id, latest: true },
+              headers: admin.create_new_auth_token
+
+          expect(response).to have_http_status(:success)
+          json_response = response.parsed_body
+
+          expect(json_response['payload'].length).to eq 1
+          expect(json_response['payload'].first['id']).to eq latest_conversation.display_id
+        end
       end
 
       context 'with user as agent' do

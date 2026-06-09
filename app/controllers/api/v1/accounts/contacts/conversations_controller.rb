@@ -4,6 +4,7 @@ class Api::V1::Accounts::Contacts::ConversationsController < Api::V1::Accounts::
     conversations = Current.account.conversations.includes(
       :assignee, :contact, :inbox, :taggings
     ).where(contact_id: @contact.id)
+    conversations = conversations.where(inbox_id: params[:inbox_id]) if params[:inbox_id].present?
 
     # Apply permission-based filtering using the existing service
     conversations = Conversations::PermissionFilterService.new(
@@ -12,6 +13,7 @@ class Api::V1::Accounts::Contacts::ConversationsController < Api::V1::Accounts::
       Current.account
     ).perform
 
-    @conversations = conversations.order(last_activity_at: :desc).limit(20)
+    limit = ActiveModel::Type::Boolean.new.cast(params[:latest]) ? 1 : 20
+    @conversations = conversations.order(last_activity_at: :desc).limit(limit)
   end
 end

@@ -1,8 +1,11 @@
 <script setup>
 import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useVuelidate } from '@vuelidate/core';
 import { required, requiredIf } from '@vuelidate/validators';
 import { INBOX_TYPES, isVoiceCallEnabled } from 'dashboard/helper/inbox';
+import { useStore } from 'dashboard/composables/store';
 import {
   appendSignature,
   removeSignature,
@@ -26,6 +29,8 @@ import ActionButtons from './ActionButtons.vue';
 import InboxEmptyState from './InboxEmptyState.vue';
 import AttachmentPreviews from './AttachmentPreviews.vue';
 import CopilotReplyBottomPanel from 'dashboard/components/widgets/WootWriter/CopilotReplyBottomPanel.vue';
+import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
+import Button from 'dashboard/components-next/button/Button.vue';
 
 const props = defineProps({
   contacts: { type: Array, default: () => [] },
@@ -57,13 +62,22 @@ const emit = defineEmits([
 const DEFAULT_FORMATTING = 'Context::Default';
 
 const copilot = useCopilotReply();
+const store = useStore();
+const router = useRouter();
+const { t } = useI18n();
 
 const showContactsDropdown = ref(false);
 const showInboxesDropdown = ref(false);
 const showCcEmailsDropdown = ref(false);
 const showBccEmailsDropdown = ref(false);
+const existingConversationDialogRef = ref(null);
+const existingConversation = ref(null);
+const pendingConversationRequest = ref(null);
 
 const isCreating = computed(() => props.contactConversationsUiFlags.isCreating);
+const shouldWarnOnExistingConversation = computed(
+  () => props.targetInbox?.warnOnExistingConversation
+);
 
 const state = props.formState || {
   message: '',
@@ -289,15 +303,48 @@ const clearForm = () => {
   v$.value.$reset();
 };
 
+const createConversation = async request => {
+  await emit('createConversation', request);
+};
+
+const findExistingConversation = async () => {
+  if (!shouldWarnOnExistingConversation.value) return null;
+
+  return store.dispatch('contactConversations/getLatestByContactAndInbox', {
+    contactId: props.selectedContact.id,
+    inboxId: props.targetInbox.id,
+  });
+};
+
+const requestCreateConversation = async request => {
+  let conversation = null;
+  try {
+    conversation = await findExistingConversation();
+  } catch (error) {
+    await createConversation(request);
+    return;
+  }
+
+  if (conversation) {
+    existingConversation.value = conversation;
+    pendingConversationRequest.value = request;
+    existingConversationDialogRef.value?.open();
+    return;
+  }
+
+  await createConversation(request);
+};
+
 const handleSendMessage = async () => {
   const isValid = await v$.value.$validate();
   if (!isValid) return;
 
+  const request = {
+    payload: newMessagePayload(),
+    isFromWhatsApp: false,
+  };
   try {
-    const success = await emit('createConversation', {
-      payload: newMessagePayload(),
-      isFromWhatsApp: false,
-    });
+    const success = await requestCreateConversation(request);
     if (success) {
       clearForm();
     }
@@ -314,7 +361,7 @@ const handleSendWhatsappMessage = async ({ message, templateParams }) => {
     templateParams,
     currentUser: props.currentUser,
   });
-  await emit('createConversation', {
+  await requestCreateConversation({
     payload: whatsappMessagePayload,
     isFromWhatsApp: true,
   });
@@ -328,10 +375,34 @@ const handleSendTwilioMessage = async ({ message, templateParams }) => {
     templateParams,
     currentUser: props.currentUser,
   });
-  await emit('createConversation', {
+  await requestCreateConversation({
     payload: twilioMessagePayload,
     isFromWhatsApp: true,
   });
+};
+
+const resetExistingConversationDialog = () => {
+  existingConversation.value = null;
+  pendingConversationRequest.value = null;
+};
+
+const handleSendAnyway = async () => {
+  const request = pendingConversationRequest.value;
+  existingConversationDialogRef.value?.close();
+  resetExistingConversationDialog();
+  if (request) await createConversation(request);
+};
+
+const handleViewExistingConversation = () => {
+  const conversation = existingConversation.value;
+  existingConversationDialogRef.value?.close();
+  resetExistingConversationDialog();
+  if (!conversation) return;
+
+  emit('discard');
+  router.push(
+    `/app/accounts/${conversation.accountId}/conversations/${conversation.id}`
+  );
 };
 
 const shouldShowMessageEditor = computed(() => {
@@ -461,5 +532,43 @@ useKeyboardEvents({
       @send-whatsapp-message="handleSendWhatsappMessage"
       @send-twilio-message="handleSendTwilioMessage"
     />
+
+    <Dialog
+      ref="existingConversationDialogRef"
+      :title="t('COMPOSE_NEW_CONVERSATION.FORM.EXISTING_CONVERSATION.TITLE')"
+      :description="
+        t('COMPOSE_NEW_CONVERSATION.FORM.EXISTING_CONVERSATION.DESCRIPTION')
+      "
+      width="md"
+      @close="resetExistingConversationDialog"
+    >
+      <template #footer>
+        <div class="flex items-center justify-between w-full gap-3">
+          <Button
+            variant="faded"
+            color="slate"
+            type="button"
+            class="w-full"
+            :label="
+              t(
+                'COMPOSE_NEW_CONVERSATION.FORM.EXISTING_CONVERSATION.SEND_ANYWAY'
+              )
+            "
+            @click="handleSendAnyway"
+          />
+          <Button
+            color="blue"
+            type="button"
+            class="w-full"
+            :label="
+              t(
+                'COMPOSE_NEW_CONVERSATION.FORM.EXISTING_CONVERSATION.VIEW_CONVERSATION'
+              )
+            "
+            @click="handleViewExistingConversation"
+          />
+        </div>
+      </template>
+    </Dialog>
   </div>
 </template>

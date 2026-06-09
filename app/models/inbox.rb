@@ -21,6 +21,7 @@
 #  out_of_office_message         :string
 #  sender_name_type              :integer          default("friendly"), not null
 #  timezone                      :string           default("UTC")
+#  warn_on_existing_conversation :boolean          default(FALSE), not null
 #  working_hours_enabled         :boolean          default(FALSE)
 #  created_at                    :datetime         not null
 #  updated_at                    :datetime         not null

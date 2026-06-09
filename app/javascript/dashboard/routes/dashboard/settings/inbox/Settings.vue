@@ -89,6 +89,7 @@ export default {
       senderNameType: 'friendly',
       businessName: '',
       locktoSingleConversation: false,
+      warnOnExistingConversation: false,
       allowMessagesAfterResolved: true,
       continuityViaEmail: true,
       selectedInboxName: '',
@@ -296,6 +297,16 @@ export default {
         this.isATelegramChannel
       );
     },
+    canWarnOnExistingConversation() {
+      return (
+        this.isATwilioChannel ||
+        this.isAWhatsAppChannel ||
+        this.isASmsInbox ||
+        this.isAnEmailChannel ||
+        this.isAPIInbox ||
+        this.isAWebWidgetInbox
+      );
+    },
     inboxNameLabel() {
       if (this.isAWebWidgetInbox) {
         return this.$t('INBOX_MGMT.ADD.WEBSITE_NAME.LABEL');
@@ -459,6 +470,8 @@ export default {
       this.selectedFeatureFlags = this.inbox.selected_feature_flags || [];
       this.replyTime = this.inbox.reply_time;
       this.locktoSingleConversation = this.inbox.lock_to_single_conversation;
+      this.warnOnExistingConversation =
+        this.inbox.warn_on_existing_conversation ?? false;
       this.selectedPortalSlug = this.inbox.help_center
         ? this.inbox.help_center.slug
         : '';
@@ -573,6 +586,7 @@ export default {
               )?.id || null
             : null,
           lock_to_single_conversation: this.locktoSingleConversation,
+          warn_on_existing_conversation: this.warnOnExistingConversation,
           sender_name_type: this.senderNameType,
           business_name: this.businessName || null,
           channel: {
@@ -856,6 +870,19 @@ export default {
                 />
               </template>
             </SettingsFieldSection>
+
+            <SettingsToggleSection
+              v-if="canWarnOnExistingConversation"
+              v-model="warnOnExistingConversation"
+              :header="
+                $t('INBOX_MGMT.SETTINGS_POPUP.WARN_ON_EXISTING_CONVERSATION')
+              "
+              :description="
+                $t(
+                  'INBOX_MGMT.SETTINGS_POPUP.WARN_ON_EXISTING_CONVERSATION_SUB_TEXT'
+                )
+              "
+            />
 
             <SettingsFieldSection
               v-if="isAWebWidgetInbox || isAnEmailChannel"

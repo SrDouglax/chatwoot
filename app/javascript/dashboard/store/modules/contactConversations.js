@@ -129,6 +129,14 @@ export const actions = {
       });
     }
   },
+  getLatestByContactAndInbox: async (_, { contactId, inboxId }) => {
+    const response = await ContactAPI.getConversations(contactId, {
+      inbox_id: inboxId,
+      latest: true,
+    });
+    const conversation = response.data.payload?.[0];
+    return conversation ? camelcaseKeys(conversation, { deep: true }) : null;
+  },
 };
 
 export const mutations = {
