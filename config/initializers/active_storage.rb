@@ -3,6 +3,7 @@
 # forces Content-Disposition: attachment for any MIME outside the default allowlist
 # (images + PDF), which makes the browser download instead of play.
 Rails.application.config.active_storage.content_types_allowed_inline += %w[
+  audio/opus
   audio/webm
   audio/ogg
   audio/mpeg
