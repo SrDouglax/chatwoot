@@ -23,6 +23,7 @@ describe Conversations::AssignmentService do
 
     context 'when assigning a user' do
       before do
+        create(:inbox_member, inbox: conversation.inbox, user: agent)
         conversation.update!(assignee_agent_bot: agent_bot, assignee: nil)
       end
 
@@ -33,6 +34,17 @@ describe Conversations::AssignmentService do
         expect(result).to eq(agent)
         expect(conversation.assignee_id).to eq(agent.id)
         expect(conversation.assignee_agent_bot_id).to be_nil
+      end
+
+      it 'does not assign a user outside the inbox' do
+        outside_agent = create(:user, account: account, role: :administrator)
+        conversation.update!(assignee_agent_bot: nil, assignee: agent)
+
+        result = described_class.new(conversation: conversation, assignee_id: outside_agent.id).perform
+
+        conversation.reload
+        expect(result).to be_nil
+        expect(conversation.assignee_id).to eq(agent.id)
       end
     end
 

@@ -57,6 +57,15 @@ describe ActionService do
         action_service.assign_agent([agent.id])
         expect(conversation.reload.assignee).to eq(agent)
       end
+
+      it 'does not assign an administrator outside the inbox' do
+        administrator = create(:user, account: account, role: :administrator)
+        original_assignee = conversation.assignee
+
+        action_service.assign_agent([administrator.id])
+
+        expect(conversation.reload.assignee).to eq(original_assignee)
+      end
     end
 
     context 'when agent is unconfirmed' do

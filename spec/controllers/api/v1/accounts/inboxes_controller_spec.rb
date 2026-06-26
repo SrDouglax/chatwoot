@@ -238,15 +238,15 @@ RSpec.describe 'Inboxes API', type: :request do
         create(:inbox_member, user: agent, inbox: inbox)
       end
 
-      it 'returns all assignable inbox members along with administrators' do
+      it 'returns only assignable inbox members' do
         get "/api/v1/accounts/#{account.id}/inboxes/#{inbox.id}/assignable_agents",
             headers: admin.create_new_auth_token,
             as: :json
 
         expect(response).to have_http_status(:success)
         response_data = JSON.parse(response.body, symbolize_names: true)[:payload]
-        expect(response_data.size).to eq(2)
-        expect(response_data.pluck(:role)).to include('agent', 'administrator')
+        expect(response_data.size).to eq(1)
+        expect(response_data.pluck(:id)).to contain_exactly(agent.id)
       end
     end
   end
