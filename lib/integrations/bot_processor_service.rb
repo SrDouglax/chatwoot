@@ -15,7 +15,7 @@ class Integrations::BotProcessorService
   def should_run_processor?(message)
     return if message.private?
     return unless processable_message?(message)
-    return unless conversation.pending?
+    return unless conversation.open? || conversation.pending?
 
     true
   end

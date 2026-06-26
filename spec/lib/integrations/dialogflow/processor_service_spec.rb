@@ -4,7 +4,7 @@ describe Integrations::Dialogflow::ProcessorService do
   let(:account) { create(:account) }
   let(:inbox) { create(:inbox, account: account) }
   let(:hook) { create(:integrations_hook, :dialogflow, inbox: inbox, account: account) }
-  let(:conversation) { create(:conversation, account: account, status: :pending) }
+  let(:conversation) { create(:conversation, account: account, status: :open) }
   let(:message) { create(:message, account: account, conversation: conversation) }
   let(:template_message) { create(:message, account: account, conversation: conversation, message_type: :template, content: 'Bot message') }
   let(:event_name) { 'message.created' }
@@ -120,8 +120,8 @@ describe Integrations::Dialogflow::ProcessorService do
       end
     end
 
-    context 'when conversation is not bot' do
-      let(:conversation) { create(:conversation, account: account, status: :open) }
+    context 'when conversation is resolved' do
+      let(:conversation) { create(:conversation, account: account, status: :resolved) }
 
       it 'returns nil' do
         expect(processor.perform).to be_nil

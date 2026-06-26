@@ -259,15 +259,14 @@ RSpec.describe Message do
       expect(message.conversation.open?).to be false
     end
 
-    it 'will mark the conversation as pending if the agent bot is active' do
+    it 'will reopen the conversation if the agent bot is active' do
       agent_bot = create(:agent_bot)
       inbox = conversation.inbox
       inbox.agent_bot = agent_bot
       inbox.save!
       conversation.resolved!
       message.save!
-      expect(conversation.open?).to be false
-      expect(conversation.pending?).to be true
+      expect(conversation.reload.open?).to be true
     end
   end
 
