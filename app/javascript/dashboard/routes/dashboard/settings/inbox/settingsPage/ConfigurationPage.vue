@@ -503,7 +503,7 @@ export default {
 
 <style lang="scss" scoped>
 .whatsapp-settings--content {
-  ::v-deep input {
+  :deep(input) {
     margin-bottom: 0;
   }
 }

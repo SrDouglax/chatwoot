@@ -41,14 +41,16 @@ describe('#ContactsAPI', () => {
     it('#getConversations', () => {
       contactAPI.getConversations(1);
       expect(axiosMock.get).toHaveBeenCalledWith(
-        '/api/v1/contacts/1/conversations'
+        '/api/v1/contacts/1/conversations',
+        { params: {} }
       );
     });
 
     it('#getConversations with params', () => {
       contactAPI.getConversations(1, { inbox_id: 2, latest: true });
       expect(axiosMock.get).toHaveBeenCalledWith(
-        '/api/v1/contacts/1/conversations?inbox_id=2&latest=true'
+        '/api/v1/contacts/1/conversations',
+        { params: { inbox_id: 2, latest: true } }
       );
     });
 

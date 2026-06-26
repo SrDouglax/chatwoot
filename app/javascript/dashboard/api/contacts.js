@@ -36,11 +36,17 @@ class ContactAPI extends ApiClient {
   }
 
   getConversations(contactId, params = {}) {
-    const query = new URLSearchParams(params).toString();
-    const requestURL = `${this.url}/${contactId}/conversations${
-      query ? `?${query}` : ''
-    }`;
-    return axios.get(requestURL);
+    if (params.inboxId) {
+      params = { ...params, inbox_id: params.inboxId };
+      delete params.inboxId;
+    }
+    return axios.get(`${this.url}/${contactId}/conversations`, { params });
+  }
+
+  getAttachments(contactId, page = 1) {
+    return axios.get(`${this.url}/${contactId}/attachments`, {
+      params: { page },
+    });
   }
 
   getContactableInboxes(contactId) {
@@ -51,9 +57,10 @@ class ContactAPI extends ApiClient {
     return axios.get(`${this.url}/${contactId}/labels`);
   }
 
-  initiateCall(contactId, inboxId) {
+  initiateCall(contactId, inboxId, conversationId = null) {
     return axios.post(`${this.url}/${contactId}/call`, {
       inbox_id: inboxId,
+      conversation_id: conversationId,
     });
   }
 
