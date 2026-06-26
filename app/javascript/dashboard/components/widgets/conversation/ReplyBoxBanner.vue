@@ -5,6 +5,7 @@ import { useMapGetter } from 'dashboard/composables/store';
 import { useAlert } from 'dashboard/composables';
 import { useI18n } from 'vue-i18n';
 import wootConstants from 'dashboard/constants/globals';
+import { useAgentsList } from 'dashboard/composables/useAgentsList';
 
 import Banner from 'dashboard/components/ui/Banner.vue';
 
@@ -24,6 +25,7 @@ const { t } = useI18n();
 
 const currentChat = useMapGetter('getSelectedChat');
 const currentUser = useMapGetter('getCurrentUser');
+const { assignableAgents } = useAgentsList(false);
 
 const assignedAgent = computed({
   get() {
@@ -49,15 +51,21 @@ const isUnassigned = computed(() => !assignedAgent.value);
 const isAssignedToOtherAgent = computed(
   () => assignedAgent.value?.id !== currentUser.value?.id
 );
+const isCurrentUserAssignable = computed(() =>
+  assignableAgents.value.some(agent => agent.id === currentUser.value?.id)
+);
 
 const showSelfAssignBanner = computed(() => {
   return (
-    isUserTyping.value && (isUnassigned.value || isAssignedToOtherAgent.value)
+    isCurrentUserAssignable.value &&
+    isUserTyping.value &&
+    (isUnassigned.value || isAssignedToOtherAgent.value)
   );
 });
 
 const showBotHandoffBanner = computed(
   () =>
+    isCurrentUserAssignable.value &&
     isUserTyping.value &&
     currentChat.value?.status === wootConstants.STATUS_TYPE.PENDING
 );
@@ -74,7 +82,10 @@ const selfAssignConversation = async () => {
 };
 
 const needsAssignmentToCurrentUser = computed(() => {
-  return isUnassigned.value || isAssignedToOtherAgent.value;
+  return (
+    isCurrentUserAssignable.value &&
+    (isUnassigned.value || isAssignedToOtherAgent.value)
+  );
 });
 
 const onClickSelfAssign = async () => {

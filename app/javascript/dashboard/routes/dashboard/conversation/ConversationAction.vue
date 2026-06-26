@@ -25,9 +25,10 @@ export default {
     },
   },
   setup() {
-    const { agentsList } = useAgentsList();
+    const { agentsList, assignableAgents } = useAgentsList();
     return {
       agentsList,
+      assignableAgents,
     };
   },
   data() {
@@ -149,6 +150,13 @@ export default {
       },
     },
     showSelfAssign() {
+      const currentUserIsAssignable = this.assignableAgents.some(
+        agent => agent.id === this.currentUser.id
+      );
+      if (!currentUserIsAssignable) {
+        return false;
+      }
+
       if (!this.assignedAgent) {
         return true;
       }
