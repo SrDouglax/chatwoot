@@ -100,7 +100,7 @@ class ActionService
   end
 
   def agent_belongs_to_inbox?(agent_ids)
-    @conversation.inbox.members.exists?(user_id: agent_ids[0])
+    @conversation.inbox.inbox_members.exists?(user_id: agent_ids[0])
   end
 
   def team_belongs_to_account?(team_ids)
