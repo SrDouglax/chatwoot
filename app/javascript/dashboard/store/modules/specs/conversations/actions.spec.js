@@ -494,6 +494,15 @@ describe('#actions', () => {
       ]);
     });
   });
+
+  describe('#setChatPriorityFirst', () => {
+    it('sends correct action', async () => {
+      await actions.setChatPriorityFirst({ commit }, false);
+      expect(commit.mock.calls).toEqual([
+        ['CHANGE_CHAT_PRIORITY_FIRST', false],
+      ]);
+    });
+  });
 });
 
 describe('#deleteMessage', () => {

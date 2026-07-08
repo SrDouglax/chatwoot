@@ -215,6 +215,7 @@ class ConversationFinder
 
   def conversations
     @conversations = conversations_base_query
+    @conversations = @conversations.sort_on_priority_first if priority_first? && !priority_sort?
 
     sort_by, sort_order = SORT_OPTIONS[params[:sort_by]] || SORT_OPTIONS['last_activity_at_desc']
     @conversations = @conversations.send(sort_by, sort_order)
@@ -224,6 +225,16 @@ class ConversationFinder
     else
       @conversations.page(current_page).per(ENV.fetch('CONVERSATION_RESULTS_PER_PAGE', '25').to_i)
     end
+  end
+
+  def priority_first?
+    return true unless params.key?(:priority_first)
+
+    ActiveModel::Type::Boolean.new.cast(params[:priority_first])
+  end
+
+  def priority_sort?
+    params[:sort_by].to_s.start_with?('priority_')
   end
 end
 ConversationFinder.prepend_mod_with('ConversationFinder')

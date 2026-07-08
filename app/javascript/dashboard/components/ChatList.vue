@@ -52,6 +52,7 @@ import {
 import { matchesFilters } from '../store/modules/conversations/helpers/filterHelpers';
 import { CONVERSATION_EVENTS } from '../helper/AnalyticsHelper/events';
 import { ASSIGNEE_TYPE_TAB_PERMISSIONS } from 'dashboard/constants/permissions.js';
+import { CONVERSATION_PRIORITY_ORDER } from 'shared/constants/messages';
 
 const props = defineProps({
   conversationInbox: { type: [String, Number], default: 0 },
@@ -75,6 +76,7 @@ const resolveAttributesModalRef = ref(null);
 const activeAssigneeTab = ref(wootConstants.ASSIGNEE_TYPE.ME);
 const activeStatus = ref(wootConstants.STATUS_TYPE.OPEN);
 const activeSortBy = ref(wootConstants.SORT_BY_TYPE.LAST_ACTIVITY_AT_DESC);
+const activePriorityFirst = ref(true);
 const showAdvancedFilters = ref(false);
 // chatsOnView is to store the chats that are currently visible on the screen,
 // which mirrors the conversationList.
@@ -252,6 +254,7 @@ const conversationFilters = computed(() => {
     assigneeType: activeAssigneeTab.value,
     status: activeStatus.value,
     sortBy: activeSortBy.value,
+    priorityFirst: activePriorityFirst.value,
     page: conversationListPagination.value,
     labels: props.label ? [props.label] : undefined,
     teamId: props.teamId || undefined,
@@ -310,6 +313,13 @@ function filterByAssigneeTab(conversations) {
 
 function sortByUnreadStatus(conversations) {
   return [...conversations].sort((a, b) => {
+    if (activePriorityFirst.value) {
+      const priorityDiff =
+        (CONVERSATION_PRIORITY_ORDER[b.priority] || 0) -
+        (CONVERSATION_PRIORITY_ORDER[a.priority] || 0);
+      if (priorityDiff !== 0) return priorityDiff;
+    }
+
     const unreadCountDiff = (b.unread_count || 0) - (a.unread_count || 0);
     if (unreadCountDiff !== 0) return unreadCountDiff;
 
@@ -380,13 +390,14 @@ const uniqueInboxes = computed(() => {
 // ---------------------- Methods -----------------------
 function setFiltersFromUISettings() {
   const { conversations_filter_by: filterBy = {} } = uiSettings.value;
-  const { status, order_by: orderBy } = filterBy;
+  const { status, order_by: orderBy, priority_first: priorityFirst } = filterBy;
   activeStatus.value = status || wootConstants.STATUS_TYPE.OPEN;
   activeSortBy.value = Object.values(wootConstants.SORT_BY_TYPE).includes(
     orderBy
   )
     ? orderBy
     : wootConstants.SORT_BY_TYPE.LAST_ACTIVITY_AT_DESC;
+  activePriorityFirst.value = priorityFirst ?? true;
 }
 
 function emitConversationLoaded() {
@@ -617,8 +628,10 @@ function updateAssigneeTab(selectedTab) {
 function onBasicFilterChange(value, type) {
   if (type === 'status') {
     activeStatus.value = value;
-  } else {
+  } else if (type === 'sort') {
     activeSortBy.value = value;
+  } else if (type === 'priorityFirst') {
+    activePriorityFirst.value = value;
   }
   resetAndFetchData();
 }
@@ -810,6 +823,7 @@ onMounted(() => {
   setFiltersFromUISettings();
   store.dispatch('setChatStatusFilter', activeStatus.value);
   store.dispatch('setChatSortFilter', activeSortBy.value);
+  store.dispatch('setChatPriorityFirst', activePriorityFirst.value);
   resetAndFetchData();
   if (hasActiveFolders.value) {
     store.dispatch('campaigns/get');

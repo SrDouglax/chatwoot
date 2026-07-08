@@ -10,6 +10,10 @@ module SortHandler
       order(created_at: sort_direction)
     end
 
+    def sort_on_priority_first
+      order(generate_sql_query('priority DESC NULLS LAST'))
+    end
+
     def sort_on_priority(sort_direction = :desc)
       order(generate_sql_query("priority #{sort_direction.to_s.upcase} NULLS LAST, last_activity_at DESC"))
     end

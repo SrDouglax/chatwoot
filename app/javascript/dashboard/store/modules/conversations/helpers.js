@@ -114,6 +114,7 @@ const SORT_OPTIONS = {
   created_at_desc: ['sortOnCreatedAt', 'desc'],
   priority_asc: ['sortOnPriority', 'asc'],
   priority_desc: ['sortOnPriority', 'desc'],
+  unread: ['sortOnUnread', 'desc'],
   waiting_since_asc: ['sortOnWaitingSince', 'asc'],
   waiting_since_desc: ['sortOnWaitingSince', 'desc'],
   priority_desc_created_at_asc: ['sortOnPriorityCreatedAt', 'desc'],
@@ -148,6 +149,13 @@ const sortConfig = {
     return a.created_at - b.created_at;
   },
 
+  sortOnUnread: (a, b) => {
+    const unreadCountDiff = (b.unread_count || 0) - (a.unread_count || 0);
+    if (unreadCountDiff !== 0) return unreadCountDiff;
+
+    return (b.last_activity_at || 0) - (a.last_activity_at || 0);
+  },
+
   sortOnWaitingSince: (a, b, sortDirection) => {
     const sortFunc = getSortOrderFunction(sortDirection);
     if (!a.waiting_since || !b.waiting_since) {
@@ -161,7 +169,21 @@ const sortConfig = {
   },
 };
 
-export const sortComparator = (a, b, sortKey) => {
+const priorityFirstComparator = (a, b) => {
+  const p1 = CONVERSATION_PRIORITY_ORDER[a.priority] || 0;
+  const p2 = CONVERSATION_PRIORITY_ORDER[b.priority] || 0;
+
+  return p2 - p1;
+};
+
+const isPrioritySort = sortKey => sortKey?.startsWith('priority_');
+
+export const sortComparator = (a, b, sortKey, priorityFirst = true) => {
+  if (priorityFirst && !isPrioritySort(sortKey)) {
+    const priorityDiff = priorityFirstComparator(a, b);
+    if (priorityDiff !== 0) return priorityDiff;
+  }
+
   const [sortMethod, sortDirection] =
     SORT_OPTIONS[sortKey] || SORT_OPTIONS.last_activity_at_desc;
   return sortConfig[sortMethod](a, b, sortDirection);

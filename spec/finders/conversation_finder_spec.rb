@@ -157,6 +157,67 @@ describe ConversationFinder do
       end
     end
 
+    context 'with priority first sort' do
+      let!(:priority_inbox) { create(:inbox, account: account, enable_auto_assignment: false) }
+      let!(:urgent_conversation) do
+        create(:conversation, account: account, inbox: priority_inbox, priority: 'urgent',
+                              last_activity_at: 2.days.ago)
+      end
+      let!(:medium_conversation) do
+        create(:conversation, account: account, inbox: priority_inbox, priority: 'medium',
+                              last_activity_at: 1.day.ago)
+      end
+      let!(:low_conversation) do
+        create(:conversation, account: account, inbox: priority_inbox, priority: 'low',
+                              last_activity_at: 1.hour.ago)
+      end
+
+      before do
+        create(:inbox_member, user: user_1, inbox: priority_inbox)
+      end
+
+      it 'uses priority as the primary order by default' do
+        params = { inbox_id: priority_inbox.id, status: 'open', sort_by: 'last_activity_at_desc' }
+
+        result = described_class.new(user_1, params).perform
+
+        expect(result[:conversations].map(&:id)).to eq([
+                                                         urgent_conversation.id,
+                                                         medium_conversation.id,
+                                                         low_conversation.id
+                                                       ])
+      end
+
+      it 'uses the selected order when priority first is disabled' do
+        params = {
+          inbox_id: priority_inbox.id,
+          status: 'open',
+          sort_by: 'last_activity_at_desc',
+          priority_first: false
+        }
+
+        result = described_class.new(user_1, params).perform
+
+        expect(result[:conversations].map(&:id)).to eq([
+                                                         low_conversation.id,
+                                                         medium_conversation.id,
+                                                         urgent_conversation.id
+                                                       ])
+      end
+
+      it 'keeps explicit priority ascending order when priority first is enabled' do
+        params = { inbox_id: priority_inbox.id, status: 'open', sort_by: 'priority_asc' }
+
+        result = described_class.new(user_1, params).perform
+
+        expect(result[:conversations].map(&:id)).to eq([
+                                                         low_conversation.id,
+                                                         medium_conversation.id,
+                                                         urgent_conversation.id
+                                                       ])
+      end
+    end
+
     context 'with assignee_type assigned' do
       let(:params) { { assignee_type: 'assigned' } }
 

@@ -14,8 +14,21 @@ commonHelpers();
 
 describe('#getters', () => {
   describe('#getAllConversations', () => {
-    it('returns conversations ordered by lastActivityAt in descending order if no sort order is available', () => {
+    it('returns conversations ordered by priority first by default', () => {
       const state = { allConversations: [...conversations] };
+      expect(getters.getAllConversations(state)).toEqual([
+        conversations[3],
+        conversations[0],
+        conversations[1],
+        conversations[2],
+      ]);
+    });
+
+    it('returns conversations ordered by lastActivityAt in descending order if no sort order is available', () => {
+      const state = {
+        allConversations: [...conversations],
+        chatPriorityFirst: false,
+      };
       expect(getters.getAllConversations(state)).toEqual([
         conversations[1],
         conversations[2],
@@ -28,6 +41,7 @@ describe('#getters', () => {
       const state = {
         allConversations: [...conversations],
         chatSortFilter: 'latest',
+        chatPriorityFirst: false,
       };
       expect(getters.getAllConversations(state)).toEqual([
         conversations[1],
@@ -41,6 +55,7 @@ describe('#getters', () => {
       const state = {
         allConversations: [...conversations],
         chatSortFilter: 'last_activity_at_desc',
+        chatPriorityFirst: false,
       };
       expect(getters.getAllConversations(state)).toEqual([
         conversations[1],
@@ -54,6 +69,7 @@ describe('#getters', () => {
       const state = {
         allConversations: [...conversations],
         chatSortFilter: 'last_activity_at_asc',
+        chatPriorityFirst: false,
       };
       expect(getters.getAllConversations(state)).toEqual([
         conversations[0],
@@ -67,6 +83,7 @@ describe('#getters', () => {
       const state = {
         allConversations: [...conversations],
         chatSortFilter: 'created_at_desc',
+        chatPriorityFirst: false,
       };
       expect(getters.getAllConversations(state)).toEqual([
         conversations[0],
@@ -80,6 +97,7 @@ describe('#getters', () => {
       const state = {
         allConversations: [...conversations],
         chatSortFilter: 'created_at_asc',
+        chatPriorityFirst: false,
       };
       expect(getters.getAllConversations(state)).toEqual([
         conversations[3],
@@ -93,6 +111,7 @@ describe('#getters', () => {
       const state = {
         allConversations: [...conversations],
         chatSortFilter: 'priority_desc',
+        chatPriorityFirst: false,
       };
       expect(getters.getAllConversations(state)).toEqual([
         conversations[3],
@@ -106,6 +125,21 @@ describe('#getters', () => {
       const state = {
         allConversations: [...conversations],
         chatSortFilter: 'priority_asc',
+        chatPriorityFirst: false,
+      };
+      expect(getters.getAllConversations(state)).toEqual([
+        conversations[1],
+        conversations[2],
+        conversations[0],
+        conversations[3],
+      ]);
+    });
+
+    it('keeps explicit priority ascending order even when priority first is enabled', () => {
+      const state = {
+        allConversations: [...conversations],
+        chatSortFilter: 'priority_asc',
+        chatPriorityFirst: true,
       };
       expect(getters.getAllConversations(state)).toEqual([
         conversations[1],
@@ -119,6 +153,7 @@ describe('#getters', () => {
       const state = {
         allConversations: [...conversations],
         chatSortFilter: 'waiting_since_asc',
+        chatPriorityFirst: false,
       };
       expect(getters.getAllConversations(state)).toEqual([
         conversations[1],
@@ -374,6 +409,13 @@ describe('#getters', () => {
       };
       const state = { conversationFilters: conversationFilters };
       expect(getters.getChatListFilters(state)).toEqual(conversationFilters);
+    });
+  });
+
+  describe('#getChatPriorityFirst', () => {
+    it('returns the priority-first sort filter', () => {
+      const state = { chatPriorityFirst: false };
+      expect(getters.getChatPriorityFirst(state)).toBe(false);
     });
   });
 

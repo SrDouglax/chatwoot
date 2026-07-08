@@ -40,7 +40,8 @@
     "SORT_TOOLTIP_LABEL": "Ordenar conversas",
     "CHAT_SORT": {
       "STATUS": "Situação",
-      "ORDER_BY": "Ordenar por"
+      "ORDER_BY": "Ordenar por",
+      "PRIORITY_FIRST": "Prioridade primeiro"
     },
     "CHAT_TIME_STAMP": {
       "CREATED": {

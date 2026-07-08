@@ -8,6 +8,7 @@ import { useMapGetter, useStore } from 'dashboard/composables/store.js';
 import wootConstants from 'dashboard/constants/globals';
 import SelectMenu from 'dashboard/components-next/selectmenu/SelectMenu.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
+import ToggleSwitch from 'dashboard/components-next/switch/Switch.vue';
 
 defineProps({
   isOnExpandedLayout: {
@@ -25,6 +26,7 @@ const { updateUISettings } = useUISettings();
 
 const chatStatusFilter = useMapGetter('getChatStatusFilter');
 const chatSortFilter = useMapGetter('getChatSortFilter');
+const chatPriorityFirst = useMapGetter('getChatPriorityFirst');
 
 const [showActionsDropdown, toggleDropdown] = useToggle();
 
@@ -121,6 +123,8 @@ const saveSelectedFilter = (type, value) => {
     conversations_filter_by: {
       status: type === 'status' ? value : currentStatusFilter.value,
       order_by: type === 'sort' ? value : currentSortBy.value,
+      priority_first:
+        type === 'priorityFirst' ? value : chatPriorityFirst.value,
     },
   });
 };
@@ -135,6 +139,12 @@ const handleSortChange = value => {
   emit('changeFilter', value, 'sort');
   store.dispatch('setChatSortFilter', value);
   saveSelectedFilter('sort', value);
+};
+
+const handlePriorityFirstChange = value => {
+  emit('changeFilter', value, 'priorityFirst');
+  store.dispatch('setChatPriorityFirst', value);
+  saveSelectedFilter('priorityFirst', value);
 };
 </script>
 
@@ -179,6 +189,15 @@ const handleSortChange = value => {
           :label="activeChatSortLabel"
           :sub-menu-position="isOnExpandedLayout ? 'left' : 'right'"
           @update:model-value="handleSortChange"
+        />
+      </div>
+      <div class="flex items-center justify-between last:mt-4 gap-2">
+        <span class="text-sm truncate text-n-slate-12">
+          {{ $t('CHAT_LIST.CHAT_SORT.PRIORITY_FIRST') }}
+        </span>
+        <ToggleSwitch
+          :model-value="chatPriorityFirst"
+          @update:model-value="handlePriorityFirstChange"
         />
       </div>
     </div>

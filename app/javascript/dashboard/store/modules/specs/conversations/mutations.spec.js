@@ -84,6 +84,14 @@ describe('#mutations', () => {
     });
   });
 
+  describe('#CHANGE_CHAT_PRIORITY_FIRST', () => {
+    it('updates conversation priority-first sort filter', () => {
+      const state = { chatPriorityFirst: true };
+      mutations[types.CHANGE_CHAT_PRIORITY_FIRST](state, false);
+      expect(state.chatPriorityFirst).toBe(false);
+    });
+  });
+
   describe('#SET_CURRENT_CHAT_WINDOW', () => {
     it('set current chat window', () => {
       const state = { selectedChatId: 1 };
