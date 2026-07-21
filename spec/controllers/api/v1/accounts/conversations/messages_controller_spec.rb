@@ -356,6 +356,8 @@ RSpec.describe 'Conversation Messages API', type: :request do
           expect(message.reload.external_error).to eq('err123')
         end
 
+        # The edit endpoint shares the authenticated API inbox setup exercised above.
+        # rubocop:disable RSpec/NestedGroups
         context 'when message editing is enabled' do
           let!(:editable_message) do
             create(:message, conversation: conversation, account: account, inbox: api_inbox, sender: agent,
@@ -396,7 +398,7 @@ RSpec.describe 'Conversation Messages API', type: :request do
           end
 
           it 'rejects messages older than fifteen minutes' do
-            editable_message.update_column(:created_at, 16.minutes.ago)
+            editable_message.update!(created_at: 16.minutes.ago)
 
             patch api_v1_account_conversation_message_url(
               account_id: account.id,
@@ -461,6 +463,7 @@ RSpec.describe 'Conversation Messages API', type: :request do
             expect(editable_message.additional_attributes.dig('external_edit', 'status')).to eq('failed')
           end
         end
+        # rubocop:enable RSpec/NestedGroups
       end
     end
   end

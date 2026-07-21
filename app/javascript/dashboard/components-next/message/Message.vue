@@ -2,7 +2,7 @@
 import { onMounted, computed, ref, toRefs, watch } from 'vue';
 import { useTimeoutFn } from '@vueuse/core';
 import { provideMessageContext } from './provider.js';
-import { useTrack } from 'dashboard/composables';
+import { useAlert, useTrack } from 'dashboard/composables';
 import { useMapGetter } from 'dashboard/composables/store';
 import { emitter } from 'shared/helpers/mitt';
 import { useI18n } from 'vue-i18n';

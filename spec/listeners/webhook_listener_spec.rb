@@ -84,15 +84,17 @@ describe WebhookListener do
 
   describe '#message_updated' do
     let(:event_name) { :'message.updated' }
-    let(:channel_api) { create(:channel_api, account: account) }
-    let(:api_inbox) { channel_api.inbox }
-    let(:api_conversation) { create(:conversation, account: account, inbox: api_inbox, assignee: user) }
-    let(:api_message) do
+
+    def api_edit_message(channel_api)
+      api_inbox = channel_api.inbox
+      api_conversation = create(:conversation, account: account, inbox: api_inbox, assignee: user)
       create(:message, message_type: :outgoing, account: account, inbox: api_inbox, conversation: api_conversation,
                        additional_attributes: { 'external_edit' => { 'id' => 'edit-1', 'status' => 'pending' } })
     end
 
     it 'includes changed content and edit operation in the API inbox webhook' do
+      channel_api = create(:channel_api, account: account)
+      api_message = api_edit_message(channel_api)
       event = Events::Base.new(
         event_name,
         Time.zone.now,
@@ -116,6 +118,7 @@ describe WebhookListener do
     end
 
     it 'suppresses the API inbox webhook for an internal edit result' do
+      api_message = api_edit_message(create(:channel_api, account: account))
       event = Events::Base.new(
         event_name,
         Time.zone.now,

@@ -13,7 +13,8 @@ class Messages::EditResultService
 
     message.with_lock do
       operation = message.edit_operations.find_by!(uuid: operation_id)
-      return operation if operation.status == status
+      next operation if operation.status == status
+
       conflict! unless operation.pending?
 
       operation.update!(status: status, error_code: error_code)

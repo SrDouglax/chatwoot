@@ -14,7 +14,9 @@ class CreateMessageEditOperations < ActiveRecord::Migration[7.1]
     end
 
     add_index :message_edit_operations, :uuid, unique: true
-    add_index :message_edit_operations, :message_id, unique: true, where: 'status = 0',
-                                                           name: 'index_message_edits_on_pending_message'
+    add_index :message_edit_operations, :message_id,
+              unique: true,
+              where: 'status = 0',
+              name: 'index_message_edits_on_pending_message'
   end
 end

@@ -30,17 +30,36 @@ class Messages::EditService
   attr_reader :message, :user, :content, :expected_content
 
   def validate_edit!
-    invalid!('Message editing is disabled for this inbox') unless message.inbox.api? && message.inbox.channel.message_editing_enabled?
-    invalid!('Only the original sending agent can edit this message') unless user.is_a?(User) && message.sender == user
+    validate_editing_enabled!
+    validate_editor!
     invalid!('Only recent outgoing text messages can be edited') unless eligible_message?
     invalid!('Message content cannot be blank') if content.blank?
     invalid!('Message content has changed') unless message.content == expected_content
     invalid!('Message content is unchanged') if message.content == content
   end
 
+  def validate_editing_enabled!
+    return if message.inbox.api? && message.inbox.channel.message_editing_enabled?
+
+    invalid!('Message editing is disabled for this inbox')
+  end
+
+  def validate_editor!
+    return if user.is_a?(User) && message.sender == user
+
+    invalid!('Only the original sending agent can edit this message')
+  end
+
   def eligible_message?
-    message.outgoing? && !message.private? && message.text? && message.content.present? && !message.failed? && !message.deleted &&
-      message.attachments.none? && message.created_at >= EDIT_WINDOW.ago
+    eligible_message_shape? && eligible_message_state? && message.created_at >= EDIT_WINDOW.ago
+  end
+
+  def eligible_message_shape?
+    message.outgoing? && !message.private? && message.text? && message.content.present? && message.attachments.none?
+  end
+
+  def eligible_message_state?
+    !message.failed? && !message.deleted
   end
 
   def edit_attributes(operation, status)
