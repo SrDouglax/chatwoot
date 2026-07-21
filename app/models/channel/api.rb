@@ -35,6 +35,10 @@ class Channel::Api < ApplicationRecord
     'API'
   end
 
+  def message_editing_enabled?
+    ActiveModel::Type::Boolean.new.cast(additional_attributes['message_editing_enabled'])
+  end
+
   private
 
   def ensure_valid_agent_reply_time_window

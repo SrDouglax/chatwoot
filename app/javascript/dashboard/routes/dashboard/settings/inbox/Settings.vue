@@ -31,6 +31,7 @@ import { FEATURE_FLAGS } from '../../../../featureFlags';
 import SenderNameExamplePreview from './components/SenderNameExamplePreview.vue';
 import LockToSingleConversationPreview from './components/LockToSingleConversationPreview.vue';
 import ConversationStateSettings from './components/ConversationStateSettings.vue';
+import MessageEditingSettings from './components/MessageEditingSettings.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import SpinnerLoader from 'dashboard/components-next/spinner/Spinner.vue';
 import { INBOX_TYPES } from 'dashboard/helper/inbox';
@@ -63,6 +64,7 @@ export default {
     SenderNameExamplePreview,
     LockToSingleConversationPreview,
     ConversationStateSettings,
+    MessageEditingSettings,
     MicrosoftReauthorize,
     GoogleReauthorize,
     NextButton,
@@ -95,6 +97,7 @@ export default {
       locktoSingleConversation: false,
       warnOnExistingConversation: false,
       conversationStatusesSimplified: false,
+      messageEditingEnabled: false,
       allowMessagesAfterResolved: true,
       continuityViaEmail: true,
       selectedInboxName: '',
@@ -495,6 +498,8 @@ export default {
         this.inbox.warn_on_existing_conversation ?? false;
       this.conversationStatusesSimplified =
         this.inbox.conversation_statuses_simplified ?? false;
+      this.messageEditingEnabled =
+        this.inbox.additional_attributes?.message_editing_enabled ?? false;
       this.selectedPortalSlug = this.inbox.help_center
         ? this.inbox.help_center.slug
         : '';
@@ -628,6 +633,12 @@ export default {
         };
         if (this.avatarFile) {
           payload.avatar = this.avatarFile;
+        }
+        if (this.isAPIInbox) {
+          payload.channel.additional_attributes = {
+            ...this.inbox.additional_attributes,
+            message_editing_enabled: this.messageEditingEnabled,
+          };
         }
         await this.$store.dispatch('inboxes/updateInbox', payload);
         useAlert(this.$t('INBOX_MGMT.EDIT.API.SUCCESS_MESSAGE'));
@@ -911,6 +922,11 @@ export default {
 
             <ConversationStateSettings
               v-model="conversationStatusesSimplified"
+            />
+
+            <MessageEditingSettings
+              v-if="isAPIInbox"
+              v-model="messageEditingEnabled"
             />
 
             <SettingsFieldSection

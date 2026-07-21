@@ -83,6 +83,7 @@ class Message < ApplicationRecord
   attr_accessor :echo_id
   # Transient flag used to skip waiting_since clearing for specific bot/system messages.
   attr_accessor :preserve_waiting_since
+  attr_accessor :skip_api_inbox_webhook
 
   enum message_type: { incoming: 0, outgoing: 1, activity: 2, template: 3 }
   enum content_type: {
@@ -133,6 +134,7 @@ class Message < ApplicationRecord
   has_many :attachments, dependent: :destroy, autosave: true, before_add: :validate_attachments_limit
   has_one :csat_survey_response, dependent: :destroy_async
   has_many :notifications, as: :primary_actor, dependent: :destroy_async
+  has_many :edit_operations, class_name: 'MessageEditOperation', dependent: :destroy
 
   after_create_commit :execute_after_create_commit_callbacks
 
@@ -245,7 +247,9 @@ class Message < ApplicationRecord
 
   def send_update_event
     Rails.configuration.dispatcher.dispatch(MESSAGE_UPDATED, Time.zone.now, message: self, performed_by: Current.executed_by,
-                                                                            previous_changes: previous_changes)
+                                                                            previous_changes: previous_changes,
+                                                                            changed_attributes: previous_changes,
+                                                                            skip_api_inbox_webhook: skip_api_inbox_webhook)
   end
 
   def should_index?

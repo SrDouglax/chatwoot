@@ -793,6 +793,8 @@
       "WARN_ON_EXISTING_CONVERSATION_SUB_TEXT": "When enabled, agents are warned if the selected contact already has a conversation in this inbox before sending a new message.",
       "SIMPLIFIED_CONVERSATION_STATUSES": "Simplify conversation statuses",
       "SIMPLIFIED_CONVERSATION_STATUSES_SUB_TEXT": "Keep only Open and Resolved. Enabling this reopens pending and snoozed conversations.",
+      "MESSAGE_EDITING": "Allow recent message editing",
+      "MESSAGE_EDITING_SUB_TEXT": "Allow the original sending agent to edit text messages for 15 minutes. The API provider must support message editing.",
       "INBOX_UPDATE_TITLE": "Inbox Settings",
       "INBOX_UPDATE_SUB_TEXT": "Update your inbox settings",
       "AUTO_ASSIGNMENT_SUB_TEXT": "Enable or disable the automatic assignment of new conversations to the agents added to this inbox.",

@@ -346,6 +346,18 @@ const actions = {
     );
   },
 
+  editMessage: async (
+    { commit },
+    { conversationId, messageId, content, expectedContent }
+  ) => {
+    const { data } = await MessageApi.edit(conversationId, messageId, {
+      content,
+      expectedContent,
+    });
+    commit(types.ADD_MESSAGE, data);
+    return data;
+  },
+
   deleteMessage: async function deleteLabels(
     { commit },
     { conversationId, messageId }

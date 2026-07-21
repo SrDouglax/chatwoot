@@ -355,6 +355,112 @@ RSpec.describe 'Conversation Messages API', type: :request do
           expect(message.reload.status).to eq('failed')
           expect(message.reload.external_error).to eq('err123')
         end
+
+        context 'when message editing is enabled' do
+          let!(:editable_message) do
+            create(:message, conversation: conversation, account: account, inbox: api_inbox, sender: agent,
+                             message_type: :outgoing, content_type: :text, content: 'before edit', status: :sent)
+          end
+
+          before do
+            api_channel.update!(additional_attributes: { 'message_editing_enabled' => true })
+          end
+
+          it 'creates a pending edit operation and updates the content' do
+            patch api_v1_account_conversation_message_url(
+              account_id: account.id,
+              conversation_id: conversation.display_id,
+              id: editable_message.id
+            ), params: { content: 'after edit', expected_content: 'before edit' }, headers: agent.create_new_auth_token, as: :json
+
+            expect(response).to have_http_status(:success)
+            expect(editable_message.reload.content).to eq('after edit')
+            expect(editable_message.edit_operations.last).to have_attributes(
+              previous_content: 'before edit', new_content: 'after edit', status: 'pending', editor: agent
+            )
+            expect(response.parsed_body.dig('additional_attributes', 'external_edit', 'status')).to eq('pending')
+          end
+
+          it 'rejects an edit from an agent other than the original sender' do
+            other_agent = create(:user, account: account, role: :agent)
+            create(:inbox_member, inbox: api_inbox, user: other_agent)
+
+            patch api_v1_account_conversation_message_url(
+              account_id: account.id,
+              conversation_id: conversation.display_id,
+              id: editable_message.id
+            ), params: { content: 'after edit', expected_content: 'before edit' }, headers: other_agent.create_new_auth_token, as: :json
+
+            expect(response).to have_http_status(:unprocessable_entity)
+            expect(editable_message.reload.content).to eq('before edit')
+          end
+
+          it 'rejects messages older than fifteen minutes' do
+            editable_message.update_column(:created_at, 16.minutes.ago)
+
+            patch api_v1_account_conversation_message_url(
+              account_id: account.id,
+              conversation_id: conversation.display_id,
+              id: editable_message.id
+            ), params: { content: 'after edit', expected_content: 'before edit' }, headers: agent.create_new_auth_token, as: :json
+
+            expect(response).to have_http_status(:unprocessable_entity)
+            expect(editable_message.reload.content).to eq('before edit')
+          end
+
+          it 'returns conflict while another edit is pending' do
+            patch api_v1_account_conversation_message_url(
+              account_id: account.id,
+              conversation_id: conversation.display_id,
+              id: editable_message.id
+            ), params: { content: 'after edit', expected_content: 'before edit' }, headers: agent.create_new_auth_token, as: :json
+
+            patch api_v1_account_conversation_message_url(
+              account_id: account.id,
+              conversation_id: conversation.display_id,
+              id: editable_message.id
+            ), params: { content: 'second edit', expected_content: 'after edit' }, headers: agent.create_new_auth_token, as: :json
+
+            expect(response).to have_http_status(:conflict)
+            expect(editable_message.reload.content).to eq('after edit')
+          end
+
+          it 'marks a provider result as synced without changing content' do
+            operation = Messages::EditService.new(
+              message: editable_message, user: agent, content: 'after edit', expected_content: 'before edit'
+            ).perform
+            admin = create(:user, account: account, role: :administrator)
+
+            post edit_result_api_v1_account_conversation_message_url(
+              account_id: account.id,
+              conversation_id: conversation.display_id,
+              id: editable_message.id
+            ), params: { operation_id: operation.uuid, status: 'synced' }, headers: admin.create_new_auth_token, as: :json
+
+            expect(response).to have_http_status(:success)
+            expect(operation.reload.status).to eq('synced')
+            expect(editable_message.reload.content).to eq('after edit')
+          end
+
+          it 'restores the previous content after a failed provider result' do
+            operation = Messages::EditService.new(
+              message: editable_message, user: agent, content: 'after edit', expected_content: 'before edit'
+            ).perform
+            admin = create(:user, account: account, role: :administrator)
+
+            post edit_result_api_v1_account_conversation_message_url(
+              account_id: account.id,
+              conversation_id: conversation.display_id,
+              id: editable_message.id
+            ), params: { operation_id: operation.uuid, status: 'failed', error_code: 'provider_timeout' },
+               headers: admin.create_new_auth_token, as: :json
+
+            expect(response).to have_http_status(:success)
+            expect(operation.reload).to have_attributes(status: 'failed', error_code: 'provider_timeout')
+            expect(editable_message.reload.content).to eq('before edit')
+            expect(editable_message.additional_attributes.dig('external_edit', 'status')).to eq('failed')
+          end
+        end
       end
     end
   end

@@ -98,6 +98,13 @@ class MessageApi extends ApiClient {
     );
   }
 
+  edit(conversationID, messageId, { content, expectedContent }) {
+    return axios.patch(`${this.url}/${conversationID}/messages/${messageId}`, {
+      content,
+      expected_content: expectedContent,
+    });
+  }
+
   getPreviousMessages({ conversationId, after, before }) {
     const params = { before };
     if (after && Number(after) !== Number(before)) {

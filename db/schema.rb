@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_21_190000) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_21_191000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1024,6 +1024,22 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_21_190000) do
     t.index ["source_id"], name: "index_messages_on_source_id"
   end
 
+  create_table "message_edit_operations", force: :cascade do |t|
+    t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.integer "message_id", null: false
+    t.bigint "editor_id", null: false
+    t.text "previous_content", null: false
+    t.text "new_content", null: false
+    t.integer "status", default: 0, null: false
+    t.string "error_code"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["editor_id"], name: "index_message_edit_operations_on_editor_id"
+    t.index ["message_id"], name: "index_message_edit_operations_on_message_id"
+    t.index ["message_id"], name: "index_message_edits_on_pending_message", unique: true, where: "(status = 0)"
+    t.index ["uuid"], name: "index_message_edit_operations_on_uuid", unique: true
+  end
+
   create_table "notes", force: :cascade do |t|
     t.text "content", null: false
     t.bigint "account_id", null: false
@@ -1348,6 +1364,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_21_190000) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "inboxes", "portals"
+  add_foreign_key "message_edit_operations", "messages"
+  add_foreign_key "message_edit_operations", "users", column: "editor_id"
   add_foreign_key "user_sessions", "users"
   create_trigger("accounts_after_insert_row_tr", :generated => true, :compatibility => 1).
       on("accounts").

@@ -38,8 +38,13 @@ class WebhookListener < BaseListener
 
     return unless message.webhook_sendable?
 
-    payload = message.webhook_data.merge(event: __method__.to_s)
-    deliver_webhook_payloads(payload, inbox)
+    payload = message.webhook_data.merge(
+      event: __method__.to_s,
+      changed_attributes: extract_changed_attributes(event),
+      edit_operation: message.additional_attributes['external_edit']
+    ).compact
+    deliver_account_webhooks(payload, inbox.account)
+    deliver_api_inbox_webhooks(payload, inbox) unless event.data[:skip_api_inbox_webhook]
   end
 
   def webwidget_triggered(event)

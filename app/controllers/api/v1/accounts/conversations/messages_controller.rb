@@ -1,5 +1,5 @@
 class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::Conversations::BaseController
-  before_action :ensure_api_inbox, only: :update
+  before_action :ensure_api_inbox, only: %i[update edit_result]
 
   def index
     @messages = message_finder.perform
@@ -14,8 +14,34 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
   end
 
   def update
-    Messages::StatusUpdateService.new(message, permitted_params[:status], permitted_params[:external_error]).perform
+    if permitted_params.key?(:content)
+      Messages::EditService.new(
+        message: message,
+        user: Current.user,
+        content: permitted_params[:content],
+        expected_content: permitted_params[:expected_content]
+      ).perform
+    else
+      Messages::StatusUpdateService.new(message, permitted_params[:status], permitted_params[:external_error]).perform
+    end
     @message = message
+  rescue CustomExceptions::MessageEdit::Invalid, CustomExceptions::MessageEdit::Conflict => e
+    render_error_response(e)
+  end
+
+  def edit_result
+    return render_unauthorized('Only account administrators can report edit results') unless Current.account_user&.administrator?
+
+    Messages::EditResultService.new(
+      message: message,
+      operation_id: permitted_params[:operation_id],
+      status: permitted_params[:result_status],
+      error_code: permitted_params[:error_code]
+    ).perform
+    @message = message
+    render :update
+  rescue CustomExceptions::MessageEdit::Invalid, CustomExceptions::MessageEdit::Conflict => e
+    render_error_response(e)
   end
 
   def destroy
@@ -65,7 +91,9 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
   end
 
   def permitted_params
-    params.permit(:id, :target_language, :status, :external_error)
+    permitted = params.permit(:id, :target_language, :status, :external_error, :content, :expected_content, :operation_id, :error_code)
+    permitted[:result_status] = params[:status] if action_name == 'edit_result'
+    permitted
   end
 
   def already_translated_content_available?

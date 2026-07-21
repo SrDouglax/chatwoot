@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, computed, ref, toRefs } from 'vue';
+import { onMounted, computed, ref, toRefs, watch } from 'vue';
 import { useTimeoutFn } from '@vueuse/core';
 import { provideMessageContext } from './provider.js';
 import { useTrack } from 'dashboard/composables';
@@ -23,6 +23,7 @@ import {
 } from './constants';
 
 import Avatar from 'next/avatar/Avatar.vue';
+import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 
 import TextBubble from './bubbles/Text/Index.vue';
 import ActivityBubble from './bubbles/Activity.vue';
@@ -359,12 +360,21 @@ const isMessageDeleted = computed(() => {
   return props.contentAttributes?.deleted;
 });
 
+const externalEdit = computed(
+  () =>
+    props.additionalAttributes?.externalEdit ||
+    props.additionalAttributes?.external_edit ||
+    {}
+);
+const isEditPending = computed(() => externalEdit.value.status === 'pending');
+
 const payloadForContextMenu = computed(() => {
   return {
     id: props.id,
     content_attributes: props.contentAttributes,
     content: props.content,
     conversation_id: props.conversationId,
+    additional_attributes: props.additionalAttributes,
   };
 });
 
@@ -376,6 +386,23 @@ const contextMenuEnabledOptions = computed(() => {
   const isFailedOrProcessing =
     props.status === MESSAGE_STATUS.FAILED ||
     props.status === MESSAGE_STATUS.PROGRESS;
+  const senderId = props.senderId ?? props.sender?.id;
+  const editingEnabled =
+    inbox.value.channel_type === 'Channel::Api' &&
+    inbox.value.additional_attributes?.message_editing_enabled;
+  const withinEditWindow = Date.now() / 1000 - props.createdAt <= 15 * 60;
+  const canEdit =
+    editingEnabled &&
+    isOutgoing &&
+    !props.private &&
+    props.contentType === CONTENT_TYPES.TEXT &&
+    hasText &&
+    !hasAttachments &&
+    !isFailedOrProcessing &&
+    !isMessageDeleted.value &&
+    senderId === props.currentUserId &&
+    withinEditWindow &&
+    !isEditPending.value;
 
   return {
     copy: hasText,
@@ -390,8 +417,18 @@ const contextMenuEnabledOptions = computed(() => {
       !props.private &&
       props.inboxSupportsReplyTo.outgoing &&
       !isFailedOrProcessing,
+    edit: canEdit,
   };
 });
+
+watch(
+  () => externalEdit.value.status,
+  (status, previousStatus) => {
+    if (previousStatus === 'pending' && status === 'failed') {
+      useAlert(t('CONVERSATION.CONTEXT_MENU.EDIT_ROLLED_BACK'));
+    }
+  }
+);
 
 const shouldRenderMessage = computed(() => {
   const hasAttachments = !!(props.attachments && props.attachments.length > 0);
@@ -557,14 +594,20 @@ provideMessageContext({
         <Avatar v-bind="avatarInfo" :size="24" />
       </div>
       <div
-        class="[grid-area:bubble] flex min-w-0"
+        class="[grid-area:bubble] flex min-w-0 transition-opacity duration-200"
         :class="{
           'ltr:ml-8 rtl:mr-8 justify-end': orientation === ORIENTATION.RIGHT,
           'ltr:mr-8 rtl:ml-8': orientation === ORIENTATION.LEFT,
+          'opacity-60': isEditPending,
         }"
         @contextmenu="openContextMenu($event)"
       >
         <Component :is="componentToRender" />
+        <Spinner
+          v-if="isEditPending"
+          :size="16"
+          class="ml-2 self-center text-n-blue-9"
+        />
       </div>
       <MessageError
         v-if="contentAttributes.externalError"

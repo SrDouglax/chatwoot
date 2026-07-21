@@ -14,6 +14,7 @@ import {
 import MenuItem from '../../../components/widgets/conversation/contextMenu/menuItem.vue';
 import { useTrack } from 'dashboard/composables';
 import NextButton from 'dashboard/components-next/button/Button.vue';
+import MessageEditModal from './MessageEditModal.vue';
 
 export default {
   components: {
@@ -21,6 +22,7 @@ export default {
     MenuItem,
     ContextMenu,
     NextButton,
+    MessageEditModal,
   },
   props: {
     message: {
@@ -56,6 +58,7 @@ export default {
     return {
       isCannedResponseModalOpen: false,
       showDeleteModal: false,
+      showEditModal: false,
     };
   },
   computed: {
@@ -137,6 +140,13 @@ export default {
       this.handleClose();
       this.showDeleteModal = true;
     },
+    openEditModal() {
+      this.handleClose();
+      this.showEditModal = true;
+    },
+    closeEditModal() {
+      this.showEditModal = false;
+    },
     async confirmDeletion() {
       try {
         await this.$store.dispatch('deleteMessage', {
@@ -181,6 +191,13 @@ export default {
       :confirm-text="$t('CONVERSATION.CONTEXT_MENU.DELETE_CONFIRMATION.DELETE')"
       :reject-text="$t('CONVERSATION.CONTEXT_MENU.DELETE_CONFIRMATION.CANCEL')"
     />
+    <woot-modal
+      v-if="showEditModal && enabledOptions['edit']"
+      v-model:show="showEditModal"
+      :on-close="closeEditModal"
+    >
+      <MessageEditModal :message="message" @close="closeEditModal" />
+    </woot-modal>
     <NextButton
       v-if="!hideButton"
       ghost
@@ -223,6 +240,15 @@ export default {
           }"
           variant="icon"
           @click.stop="handleTranslate"
+        />
+        <MenuItem
+          v-if="enabledOptions['edit']"
+          :option="{
+            icon: 'edit',
+            label: $t('CONVERSATION.CONTEXT_MENU.EDIT'),
+          }"
+          variant="icon"
+          @click.stop="openEditModal"
         />
         <hr />
         <MenuItem

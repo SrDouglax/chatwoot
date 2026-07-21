@@ -82,6 +82,54 @@ describe WebhookListener do
     end
   end
 
+  describe '#message_updated' do
+    let(:event_name) { :'message.updated' }
+    let(:channel_api) { create(:channel_api, account: account) }
+    let(:api_inbox) { channel_api.inbox }
+    let(:api_conversation) { create(:conversation, account: account, inbox: api_inbox, assignee: user) }
+    let(:api_message) do
+      create(:message, message_type: :outgoing, account: account, inbox: api_inbox, conversation: api_conversation,
+                       additional_attributes: { 'external_edit' => { 'id' => 'edit-1', 'status' => 'pending' } })
+    end
+
+    it 'includes changed content and edit operation in the API inbox webhook' do
+      event = Events::Base.new(
+        event_name,
+        Time.zone.now,
+        message: api_message,
+        changed_attributes: { 'content' => ['before edit', 'after edit'] }
+      )
+
+      expect(WebhookJob).to receive(:perform_later).with(
+        channel_api.webhook_url,
+        hash_including(
+          event: 'message_updated',
+          changed_attributes: [{ 'content' => { previous_value: 'before edit', current_value: 'after edit' } }],
+          edit_operation: { 'id' => 'edit-1', 'status' => 'pending' }
+        ),
+        :api_inbox_webhook,
+        secret: channel_api.secret,
+        delivery_id: instance_of(String)
+      ).once
+
+      listener.message_updated(event)
+    end
+
+    it 'suppresses the API inbox webhook for an internal edit result' do
+      event = Events::Base.new(
+        event_name,
+        Time.zone.now,
+        message: api_message,
+        changed_attributes: { 'content' => ['after edit', 'before edit'] },
+        skip_api_inbox_webhook: true
+      )
+
+      expect(WebhookJob).not_to receive(:perform_later)
+
+      listener.message_updated(event)
+    end
+  end
+
   describe '#conversation_created' do
     let(:event_name) { :'conversation.created' }
 

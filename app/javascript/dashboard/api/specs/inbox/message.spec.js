@@ -43,6 +43,21 @@ describe('#ConversationAPI', () => {
         }
       );
     });
+
+    it('#edit', () => {
+      messageAPI.edit(12, 34, {
+        content: 'after edit',
+        expectedContent: 'before edit',
+      });
+
+      expect(axiosMock.patch).toHaveBeenCalledWith(
+        '/api/v1/conversations/12/messages/34',
+        {
+          content: 'after edit',
+          expected_content: 'before edit',
+        }
+      );
+    });
   });
   describe('#buildCreatePayload', () => {
     it('builds form payload if file is available', () => {
