@@ -3,11 +3,20 @@ module AssignmentHandler
   include Events::Types
 
   included do
+    before_save :assign_unique_team_for_assignee
     before_save :ensure_assignee_is_from_team
     after_commit :notify_assignment_change, :process_assignment_changes
   end
 
   private
+
+  def assign_unique_team_for_assignee
+    return unless will_save_change_to_assignee_id?
+    return unless assignee.present? && account.auto_assign_agent_unique_team?
+
+    agent_teams = assignee.teams.where(account_id: account_id).limit(2).to_a
+    self.team = agent_teams.first if agent_teams.one?
+  end
 
   def ensure_assignee_is_from_team
     return unless team_id_changed?

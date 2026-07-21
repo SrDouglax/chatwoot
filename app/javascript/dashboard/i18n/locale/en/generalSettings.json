@@ -104,6 +104,14 @@
           "ERROR": "Failed to update audio transcription setting"
         }
       },
+      "AGENT_TEAM_ASSIGNMENT": {
+        "TITLE": "Assign an agent's unique team automatically",
+        "NOTE": "When an assigned agent belongs to exactly one team, assign that team to the conversation. Agents with no team or multiple teams keep the conversation's current team.",
+        "API": {
+          "SUCCESS": "Automatic team assignment setting updated successfully",
+          "ERROR": "Failed to update automatic team assignment setting"
+        }
+      },
       "AUTO_RESOLVE_DURATION": {
         "LABEL": "Inactivity duration for resolution",
         "HELP": "Duration after a conversation should auto resolve if there is no activity",

@@ -46,6 +46,58 @@ describe Conversations::AssignmentService do
         expect(result).to be_nil
         expect(conversation.assignee_id).to eq(agent.id)
       end
+
+      it 'assigns the agent unique team when the account setting is enabled' do
+        account.update!(auto_assign_agent_unique_team: true)
+        unique_team = create(:team, account: account)
+        create(:team_member, team: unique_team, user: agent)
+
+        result = described_class.new(conversation: conversation, assignee_id: agent.id).perform
+
+        expect(result).to eq(agent)
+        expect(conversation.reload.assignee_id).to eq(agent.id)
+        expect(conversation.team_id).to eq(unique_team.id)
+      end
+
+      it 'preserves the current team when the agent has no teams' do
+        account.update!(auto_assign_agent_unique_team: true)
+        current_team = create(:team, account: account)
+        conversation.update!(team: current_team)
+
+        result = described_class.new(conversation: conversation, assignee_id: agent.id).perform
+
+        expect(result).to eq(agent)
+        expect(conversation.reload.assignee_id).to eq(agent.id)
+        expect(conversation.team_id).to eq(current_team.id)
+      end
+
+      it 'preserves the current team when the agent has multiple teams' do
+        account.update!(auto_assign_agent_unique_team: true)
+        current_team = create(:team, account: account)
+        create_list(:team, 2, account: account).each do |team|
+          create(:team_member, team: team, user: agent)
+        end
+        conversation.update!(team: current_team)
+
+        result = described_class.new(conversation: conversation, assignee_id: agent.id).perform
+
+        expect(result).to eq(agent)
+        expect(conversation.reload.assignee_id).to eq(agent.id)
+        expect(conversation.team_id).to eq(current_team.id)
+      end
+
+      it 'keeps a missing team missing when the agent has multiple teams' do
+        account.update!(auto_assign_agent_unique_team: true)
+        create_list(:team, 2, account: account).each do |team|
+          create(:team_member, team: team, user: agent)
+        end
+
+        result = described_class.new(conversation: conversation, assignee_id: agent.id).perform
+
+        expect(result).to eq(agent)
+        expect(conversation.reload.assignee_id).to eq(agent.id)
+        expect(conversation.team_id).to be_nil
+      end
     end
 
     context 'when assigning an agent bot' do
