@@ -61,7 +61,7 @@ describe Conversations::AssignmentService do
 
       it 'preserves the current team when the agent has no teams' do
         account.update!(auto_assign_agent_unique_team: true)
-        current_team = create(:team, account: account)
+        current_team = create(:team, account: account, allow_auto_assign: false)
         conversation.update!(team: current_team)
 
         result = described_class.new(conversation: conversation, assignee_id: agent.id).perform
@@ -73,7 +73,7 @@ describe Conversations::AssignmentService do
 
       it 'preserves the current team when the agent has multiple teams' do
         account.update!(auto_assign_agent_unique_team: true)
-        current_team = create(:team, account: account)
+        current_team = create(:team, account: account, allow_auto_assign: false)
         create_list(:team, 2, account: account).each do |team|
           create(:team_member, team: team, user: agent)
         end
