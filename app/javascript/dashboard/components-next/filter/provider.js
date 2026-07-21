@@ -48,7 +48,9 @@ import languages from 'dashboard/components/widgets/conversation/advancedFilterI
  * Composable that provides conversation filtering context
  * @returns {{ filterTypes: import('vue').ComputedRef<FilterType[]>, filterGroups: import('vue').ComputedRef<FilterGroup[]> }}
  */
-export function useConversationFilterContext(simplifiedStatuses = computed(() => false)) {
+export function useConversationFilterContext(
+  simplifiedStatuses = computed(() => false)
+) {
   const { t } = useI18n();
 
   const conversationAttributes = useMapGetter(

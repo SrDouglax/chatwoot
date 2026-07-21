@@ -119,6 +119,21 @@ describe('useConversationHotKeys', () => {
     expect(snoozeAction).toBeDefined();
   });
 
+  it('should omit snooze actions for an inbox with simplified statuses', () => {
+    store.getters['inboxes/getInbox'] = vi.fn(() => ({
+      id: 1,
+      conversation_statuses_simplified: true,
+    }));
+    store.getters.getConversationById = vi.fn(() => mockCurrentChat);
+
+    const { conversationHotKeys } = useConversationHotKeys();
+    const snoozeAction = conversationHotKeys.value.find(action =>
+      action.id.includes('snooze_conversation')
+    );
+
+    expect(snoozeAction).toBeUndefined();
+  });
+
   it('should return the correct label actions when there are active labels', () => {
     const { conversationHotKeys } = useConversationHotKeys();
     const addLabelAction = conversationHotKeys.value.find(

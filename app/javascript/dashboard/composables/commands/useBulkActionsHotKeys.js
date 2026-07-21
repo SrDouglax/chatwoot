@@ -62,6 +62,25 @@ export function useBulkActionsHotKeys() {
   const selectedConversations = useMapGetter(
     'bulkActions/getSelectedConversationIds'
   );
+  const getConversationById = useMapGetter('getConversationById');
+  const getInbox = useMapGetter('inboxes/getInbox');
+
+  const selectedConversationsUseSimplifiedStatuses = computed(() => {
+    if (
+      typeof getConversationById.value !== 'function' ||
+      typeof getInbox.value !== 'function'
+    ) {
+      return false;
+    }
+
+    return selectedConversations.value.some(conversationId => {
+      const conversation = getConversationById.value(conversationId);
+      const inbox = conversation?.inbox_id
+        ? getInbox.value(conversation.inbox_id)
+        : null;
+      return inbox?.conversation_statuses_simplified ?? false;
+    });
+  });
 
   const prepareActions = actions => {
     return actions.map(action => ({
@@ -75,7 +94,9 @@ export function useBulkActionsHotKeys() {
     let actions = [];
     if (selectedConversations.value.length > 0) {
       actions = [
-        ...SNOOZE_CONVERSATION_BULK_ACTIONS,
+        ...(!selectedConversationsUseSimplifiedStatuses.value
+          ? SNOOZE_CONVERSATION_BULK_ACTIONS
+          : []),
         ...RESOLVED_CONVERSATION_BULK_ACTIONS,
         ...OPEN_CONVERSATION_BULK_ACTIONS,
       ];

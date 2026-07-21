@@ -55,8 +55,7 @@ const isSnoozed = computed(
 );
 
 const showAdditionalActions = computed(
-  () =>
-    !simplifiedStatuses.value && !isPending.value && !isSnoozed.value
+  () => !simplifiedStatuses.value && !isPending.value && !isSnoozed.value
 );
 
 const showOpenButton = computed(() => {

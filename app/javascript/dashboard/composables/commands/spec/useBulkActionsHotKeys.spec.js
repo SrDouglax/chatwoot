@@ -68,6 +68,23 @@ describe('useBulkActionsHotKeys', () => {
     );
   });
 
+  it('should omit snooze when any selected conversation uses simplified statuses', () => {
+    store.getters['bulkActions/getSelectedConversationIds'] = [1, 2];
+    store.getters.getConversationById = vi.fn(id => ({ id, inbox_id: id }));
+    store.getters['inboxes/getInbox'] = vi.fn(id => ({
+      id,
+      conversation_statuses_simplified: id === 2,
+    }));
+
+    const { bulkActionsHotKeys } = useBulkActionsHotKeys();
+
+    expect(
+      bulkActionsHotKeys.value.some(action =>
+        action.id.includes('bulk_action_snooze_conversation')
+      )
+    ).toBe(false);
+  });
+
   it('should create handlers for reopen and resolve actions', () => {
     store.getters['bulkActions/getSelectedConversationIds'] = [1, 2, 3];
     const { bulkActionsHotKeys } = useBulkActionsHotKeys();

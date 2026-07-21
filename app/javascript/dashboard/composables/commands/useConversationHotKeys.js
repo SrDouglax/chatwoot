@@ -152,6 +152,8 @@ export function useConversationHotKeys() {
   const currentChat = useMapGetter('getSelectedChat');
   const replyMode = useMapGetter('draftMessages/getReplyEditorMode');
   const contextMenuChatId = useMapGetter('getContextMenuChatId');
+  const getConversationById = useMapGetter('getConversationById');
+  const getInbox = useMapGetter('inboxes/getInbox');
   const teams = useMapGetter('teams/getTeams');
   const getDraftMessage = useMapGetter('draftMessages/get');
 
@@ -161,6 +163,26 @@ export function useConversationHotKeys() {
   );
 
   const draftMessage = computed(() => getDraftMessage.value(draftKey.value));
+
+  const commandConversation = computed(() => {
+    if (
+      contextMenuChatId.value &&
+      typeof getConversationById.value === 'function'
+    ) {
+      return getConversationById.value(contextMenuChatId.value);
+    }
+
+    return currentChat.value;
+  });
+
+  const simplifiedStatuses = computed(() => {
+    const inboxId = commandConversation.value?.inbox_id;
+    const inbox =
+      inboxId && typeof getInbox.value === 'function'
+        ? getInbox.value(inboxId)
+        : null;
+    return inbox?.conversation_statuses_simplified ?? false;
+  });
 
   const hasAnAssignedTeam = computed(() => !!currentChat.value?.meta?.team);
 
@@ -201,7 +223,9 @@ export function useConversationHotKeys() {
 
     let actions = [];
     if (isOpen) {
-      actions = [...OPEN_CONVERSATION_ACTIONS, ...SNOOZE_CONVERSATION_ACTIONS];
+      actions = simplifiedStatuses.value
+        ? OPEN_CONVERSATION_ACTIONS
+        : [...OPEN_CONVERSATION_ACTIONS, ...SNOOZE_CONVERSATION_ACTIONS];
     } else if (isResolved || isSnoozed) {
       actions = RESOLVED_CONVERSATION_ACTIONS;
     }
@@ -368,7 +392,9 @@ export function useConversationHotKeys() {
 
   const shouldShowSnoozeOption = computed(() => {
     return (
-      isAConversationRoute(route.name, true, false) && contextMenuChatId.value
+      !simplifiedStatuses.value &&
+      isAConversationRoute(route.name, true, false) &&
+      contextMenuChatId.value
     );
   });
 

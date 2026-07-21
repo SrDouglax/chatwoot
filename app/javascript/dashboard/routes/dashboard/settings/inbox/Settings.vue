@@ -615,8 +615,7 @@ export default {
             : null,
           lock_to_single_conversation: this.locktoSingleConversation,
           warn_on_existing_conversation: this.warnOnExistingConversation,
-          conversation_statuses_simplified:
-            this.conversationStatusesSimplified,
+          conversation_statuses_simplified: this.conversationStatusesSimplified,
           sender_name_type: this.senderNameType,
           business_name: this.businessName || null,
           channel: {

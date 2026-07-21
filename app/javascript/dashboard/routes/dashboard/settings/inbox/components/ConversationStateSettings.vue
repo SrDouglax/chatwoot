@@ -9,9 +9,7 @@ const modelValue = defineModel({ type: Boolean, default: false });
     v-model="modelValue"
     :header="$t('INBOX_MGMT.SETTINGS_POPUP.SIMPLIFIED_CONVERSATION_STATUSES')"
     :description="
-      $t(
-        'INBOX_MGMT.SETTINGS_POPUP.SIMPLIFIED_CONVERSATION_STATUSES_SUB_TEXT'
-      )
+      $t('INBOX_MGMT.SETTINGS_POPUP.SIMPLIFIED_CONVERSATION_STATUSES_SUB_TEXT')
     "
   />
 </template>
