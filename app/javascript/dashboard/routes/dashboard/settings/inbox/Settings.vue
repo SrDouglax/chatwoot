@@ -30,6 +30,7 @@ import AccountHealth from './components/AccountHealth.vue';
 import { FEATURE_FLAGS } from '../../../../featureFlags';
 import SenderNameExamplePreview from './components/SenderNameExamplePreview.vue';
 import LockToSingleConversationPreview from './components/LockToSingleConversationPreview.vue';
+import ConversationStateSettings from './components/ConversationStateSettings.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import SpinnerLoader from 'dashboard/components-next/spinner/Spinner.vue';
 import { INBOX_TYPES } from 'dashboard/helper/inbox';
@@ -61,6 +62,7 @@ export default {
     WeeklyAvailability,
     SenderNameExamplePreview,
     LockToSingleConversationPreview,
+    ConversationStateSettings,
     MicrosoftReauthorize,
     GoogleReauthorize,
     NextButton,
@@ -92,6 +94,7 @@ export default {
       businessName: '',
       locktoSingleConversation: false,
       warnOnExistingConversation: false,
+      conversationStatusesSimplified: false,
       allowMessagesAfterResolved: true,
       continuityViaEmail: true,
       selectedInboxName: '',
@@ -490,6 +493,8 @@ export default {
       this.locktoSingleConversation = this.inbox.lock_to_single_conversation;
       this.warnOnExistingConversation =
         this.inbox.warn_on_existing_conversation ?? false;
+      this.conversationStatusesSimplified =
+        this.inbox.conversation_statuses_simplified ?? false;
       this.selectedPortalSlug = this.inbox.help_center
         ? this.inbox.help_center.slug
         : '';
@@ -605,6 +610,8 @@ export default {
             : null,
           lock_to_single_conversation: this.locktoSingleConversation,
           warn_on_existing_conversation: this.warnOnExistingConversation,
+          conversation_statuses_simplified:
+            this.conversationStatusesSimplified,
           sender_name_type: this.senderNameType,
           business_name: this.businessName || null,
           channel: {
@@ -900,6 +907,10 @@ export default {
                   'INBOX_MGMT.SETTINGS_POPUP.WARN_ON_EXISTING_CONVERSATION_SUB_TEXT'
                 )
               "
+            />
+
+            <ConversationStateSettings
+              v-model="conversationStatusesSimplified"
             />
 
             <SettingsFieldSection

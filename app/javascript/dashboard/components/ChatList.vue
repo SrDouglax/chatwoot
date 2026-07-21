@@ -203,6 +203,9 @@ const currentPageFilterKey = computed(() => {
 });
 
 const inbox = useFunctionGetter('inboxes/getInbox', activeInbox);
+const simplifiedStatuses = computed(
+  () => inbox.value?.conversation_statuses_simplified ?? false
+);
 const currentPage = useFunctionGetter(
   'conversationPage/getCurrentPageFilter',
   activeAssigneeTab
@@ -386,6 +389,15 @@ const allConversationsSelected = computed(() => {
 const uniqueInboxes = computed(() => {
   return [...new Set(selectedInboxes.value)];
 });
+
+const selectedInboxesUseSimplifiedStatuses = computed(() =>
+  uniqueInboxes.value.some(inboxId => {
+    const selectedInbox = inboxesList.value.find(
+      item => Number(item.id) === Number(inboxId)
+    );
+    return selectedInbox?.conversation_statuses_simplified;
+  })
+);
 
 // ---------------------- Methods -----------------------
 function setFiltersFromUISettings() {
@@ -865,6 +877,18 @@ provide('deleteConversation', handleDelete);
 
 watch(activeTeam, () => resetAndFetchData());
 
+watch(simplifiedStatuses, enabled => {
+  if (
+    enabled &&
+    [
+      wootConstants.STATUS_TYPE.PENDING,
+      wootConstants.STATUS_TYPE.SNOOZED,
+    ].includes(activeStatus.value)
+  ) {
+    onBasicFilterChange(wootConstants.STATUS_TYPE.OPEN, 'status');
+  }
+});
+
 watch(
   computed(() => props.conversationInbox),
   () => resetAndFetchData()
@@ -913,6 +937,7 @@ watch(conversationFilters, (newVal, oldVal) => {
       :is-on-expanded-layout="isOnExpandedLayout"
       :conversation-stats="conversationStats"
       :is-list-loading="chatListLoading && !conversationList.length"
+      :simplified-statuses="simplifiedStatuses"
       @add-folders="onClickOpenAddFoldersModal"
       @delete-folders="onClickOpenDeleteFoldersModal"
       @filters-modal="onToggleAdvanceFiltersModal"
@@ -962,6 +987,7 @@ watch(conversationFilters, (newVal, oldVal) => {
       :show-open-action="allSelectedConversationsStatus('open')"
       :show-resolved-action="allSelectedConversationsStatus('resolved')"
       :show-snoozed-action="allSelectedConversationsStatus('snoozed')"
+      :disable-snooze="selectedInboxesUseSimplifiedStatuses"
       :class="isOnExpandedLayout && 'sm:!w-[24rem] !w-full'"
       @select-all-conversations="toggleSelectAll"
     />
@@ -998,6 +1024,7 @@ watch(conversationFilters, (newVal, oldVal) => {
         v-model="appliedFilter"
         :folder-name="activeFolderName"
         :is-folder-view="hasActiveFolders"
+        :simplified-statuses="simplifiedStatuses"
         @apply-filter="onApplyFilter"
         @update-folder="onUpdateSavedFilter"
         @close="closeAdvanceFiltersModal"

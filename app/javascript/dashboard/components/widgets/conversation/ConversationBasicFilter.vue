@@ -10,10 +10,14 @@ import SelectMenu from 'dashboard/components-next/selectmenu/SelectMenu.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import ToggleSwitch from 'dashboard/components-next/switch/Switch.vue';
 
-defineProps({
+const props = defineProps({
   isOnExpandedLayout: {
     type: Boolean,
     required: true,
+  },
+  simplifiedStatuses: {
+    type: Boolean,
+    default: false,
   },
 });
 
@@ -49,14 +53,18 @@ const chatStatusOptions = computed(() => [
     label: t('CHAT_LIST.CHAT_STATUS_FILTER_ITEMS.resolved.TEXT'),
     value: 'resolved',
   },
-  {
-    label: t('CHAT_LIST.CHAT_STATUS_FILTER_ITEMS.pending.TEXT'),
-    value: 'pending',
-  },
-  {
-    label: t('CHAT_LIST.CHAT_STATUS_FILTER_ITEMS.snoozed.TEXT'),
-    value: 'snoozed',
-  },
+  ...(!props.simplifiedStatuses
+    ? [
+        {
+          label: t('CHAT_LIST.CHAT_STATUS_FILTER_ITEMS.pending.TEXT'),
+          value: 'pending',
+        },
+        {
+          label: t('CHAT_LIST.CHAT_STATUS_FILTER_ITEMS.snoozed.TEXT'),
+          value: 'snoozed',
+        },
+      ]
+    : []),
   {
     label: t('CHAT_LIST.CHAT_STATUS_FILTER_ITEMS.all.TEXT'),
     value: 'all',

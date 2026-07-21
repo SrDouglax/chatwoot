@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_11_184600) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_21_190000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -903,6 +903,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_11_184600) do
     t.jsonb "auto_assignment_config", default: {}
     t.boolean "lock_to_single_conversation", default: false, null: false
     t.boolean "warn_on_existing_conversation", default: false, null: false
+    t.boolean "conversation_statuses_simplified", default: false, null: false
     t.bigint "portal_id"
     t.integer "sender_name_type", default: 0, null: false
     t.string "business_name"

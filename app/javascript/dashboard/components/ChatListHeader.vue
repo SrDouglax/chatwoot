@@ -16,6 +16,7 @@ const props = defineProps({
   isOnExpandedLayout: { type: Boolean, required: true },
   conversationStats: { type: Object, required: true },
   isListLoading: { type: Boolean, required: true },
+  simplifiedStatuses: { type: Boolean, default: false },
 });
 
 const emit = defineEmits([
@@ -157,6 +158,7 @@ const toggleConversationLayout = () => {
       <ConversationBasicFilter
         v-if="!hasAppliedFiltersOrActiveFolders"
         :is-on-expanded-layout="isOnExpandedLayout"
+        :simplified-statuses="simplifiedStatuses"
         @change-filter="onBasicFilterChange"
       />
       <SwitchLayout

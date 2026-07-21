@@ -11,6 +11,7 @@
 #  channel_type                  :string
 #  csat_config                   :jsonb            not null
 #  csat_survey_enabled           :boolean          default(FALSE)
+#  conversation_statuses_simplified :boolean       default(FALSE), not null
 #  email_address                 :string
 #  enable_auto_assignment        :boolean          default(TRUE)
 #  enable_email_collect          :boolean          default(TRUE)
@@ -84,6 +85,10 @@ class Inbox < ApplicationRecord
   after_update_commit :dispatch_update_event
 
   scope :order_by_name, -> { order('lower(name) ASC') }
+
+  def simplified_conversation_statuses?
+    conversation_statuses_simplified?
+  end
 
   # Adds multiple members to the inbox
   # @param user_ids [Array<Integer>] Array of user IDs to add as members

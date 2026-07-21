@@ -48,7 +48,7 @@ import languages from 'dashboard/components/widgets/conversation/advancedFilterI
  * Composable that provides conversation filtering context
  * @returns {{ filterTypes: import('vue').ComputedRef<FilterType[]>, filterGroups: import('vue').ComputedRef<FilterGroup[]> }}
  */
-export function useConversationFilterContext() {
+export function useConversationFilterContext(simplifiedStatuses = computed(() => false)) {
   const { t } = useI18n();
 
   const conversationAttributes = useMapGetter(
@@ -114,7 +114,10 @@ export function useConversationFilterContext() {
       attributeName: t('FILTER.ATTRIBUTES.STATUS'),
       label: t('FILTER.ATTRIBUTES.STATUS'),
       inputType: 'multiSelect',
-      options: ['open', 'resolved', 'pending', 'snoozed', 'all'].map(id => {
+      options: (simplifiedStatuses.value
+        ? ['open', 'resolved', 'all']
+        : ['open', 'resolved', 'pending', 'snoozed', 'all']
+      ).map(id => {
         return {
           id,
           name: t(`CHAT_LIST.CHAT_STATUS_FILTER_ITEMS.${id}.TEXT`),

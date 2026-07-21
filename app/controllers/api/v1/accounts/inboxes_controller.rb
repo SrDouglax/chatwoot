@@ -48,7 +48,12 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   def update
     inbox_params = permitted_params.except(:channel, :csat_config)
     inbox_params[:csat_config] = format_csat_config(permitted_params[:csat_config]) if permitted_params[:csat_config].present?
-    @inbox.update!(inbox_params)
+    ActiveRecord::Base.transaction do
+      statuses_were_simplified = @inbox.conversation_statuses_simplified?
+      @inbox.update!(inbox_params)
+      should_normalize_statuses = !statuses_were_simplified && @inbox.conversation_statuses_simplified?
+      ::Conversations::SimplifiedStatusNormalizer.new(inbox: @inbox).perform if should_normalize_statuses
+    end
     update_inbox_working_hours
     update_channel if channel_update_required?
   end
@@ -159,7 +164,8 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   def inbox_attributes
     [:name, :avatar, :greeting_enabled, :greeting_message, :enable_email_collect, :csat_survey_enabled,
      :enable_auto_assignment, :working_hours_enabled, :out_of_office_message, :timezone, :allow_messages_after_resolved,
-     :lock_to_single_conversation, :warn_on_existing_conversation, :portal_id, :sender_name_type, :business_name,
+     :lock_to_single_conversation, :warn_on_existing_conversation, :conversation_statuses_simplified, :portal_id, :sender_name_type,
+     :business_name,
      { csat_config: [:display_type, :message, :button_text, :language,
                      { survey_rules: [:operator, { values: [] }],
                        template: [:name, :template_id, :friendly_name, :content_sid, :approval_sid, :created_at, :language, :status] }] }]

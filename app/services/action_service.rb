@@ -11,6 +11,8 @@ class ActionService
   end
 
   def snooze_conversation(_params)
+    return log_unsupported_status(:snoozed) if simplified_status?(:snoozed)
+
     @conversation.snoozed!
   end
 
@@ -23,10 +25,14 @@ class ActionService
   end
 
   def pending_conversation(_params)
+    return log_unsupported_status(:pending) if simplified_status?(:pending)
+
     @conversation.pending!
   end
 
   def change_status(status)
+    return log_unsupported_status(status[0]) if simplified_status?(status[0])
+
     @conversation.update!(status: status[0])
   end
 
@@ -94,6 +100,14 @@ class ActionService
   end
 
   private
+
+  def simplified_status?(status)
+    @conversation.inbox.simplified_conversation_statuses? && %w[pending snoozed].include?(status.to_s)
+  end
+
+  def log_unsupported_status(status)
+    Rails.logger.info("Skipped unsupported #{status} status for simplified inbox #{@conversation.inbox_id}")
+  end
 
   def last_responding_agent_id
     @conversation.messages.outgoing.where(sender_type: 'User', private: false).last&.sender_id

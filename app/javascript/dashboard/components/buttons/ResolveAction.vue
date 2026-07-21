@@ -34,6 +34,12 @@ const closeDropdown = () => toggleDropdown(false);
 const openDropdown = () => toggleDropdown(true);
 
 const currentChat = computed(() => getters.getSelectedChat.value);
+const currentInbox = computed(() =>
+  store.getters['inboxes/getInbox'](currentChat.value.inbox_id)
+);
+const simplifiedStatuses = computed(
+  () => currentInbox.value?.conversation_statuses_simplified ?? false
+);
 
 const isOpen = computed(
   () => currentChat.value.status === wootConstants.STATUS_TYPE.OPEN
@@ -49,7 +55,8 @@ const isSnoozed = computed(
 );
 
 const showAdditionalActions = computed(
-  () => !isPending.value && !isSnoozed.value
+  () =>
+    !simplifiedStatuses.value && !isPending.value && !isSnoozed.value
 );
 
 const showOpenButton = computed(() => {

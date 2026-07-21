@@ -21,10 +21,15 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  simplifiedStatuses: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const emit = defineEmits(['applyFilter', 'updateFolder', 'close']);
-const { filterTypes } = useConversationFilterContext();
+const simplifiedStatuses = computed(() => props.simplifiedStatuses);
+const { filterTypes } = useConversationFilterContext(simplifiedStatuses);
 
 const filters = defineModel({
   type: Array,

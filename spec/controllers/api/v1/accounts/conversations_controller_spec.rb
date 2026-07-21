@@ -578,6 +578,20 @@ RSpec.describe 'Conversations API', type: :request do
         expect(conversation.reload.status).to eq('snoozed')
         expect(conversation.reload.snoozed_until.to_i).to eq(snoozed_until)
       end
+
+      it 'rejects pending and snoozed statuses for a simplified inbox' do
+        conversation.inbox.update!(conversation_statuses_simplified: true)
+
+        %w[pending snoozed].each do |status|
+          post "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/toggle_status",
+               headers: agent.create_new_auth_token,
+               params: { status: status },
+               as: :json
+
+          expect(response).to have_http_status(:unprocessable_entity)
+          expect(conversation.reload.status).to eq('open')
+        end
+      end
     end
 
     context 'when it is an authenticated bot' do

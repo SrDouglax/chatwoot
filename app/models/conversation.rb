@@ -71,6 +71,7 @@ class Conversation < ApplicationRecord
   validates :custom_attributes, jsonb_attributes_length: true
   validates :uuid, uniqueness: true
   validate :validate_referer_url
+  validate :validate_status_supported_by_inbox
 
   enum status: { open: 0, resolved: 1, pending: 2, snoozed: 3 }
   enum priority: { low: 0, medium: 1, high: 2, urgent: 3 }
@@ -269,6 +270,13 @@ class Conversation < ApplicationRecord
 
   def validate_additional_attributes
     self.additional_attributes = {} unless additional_attributes.is_a?(Hash)
+  end
+
+  def validate_status_supported_by_inbox
+    return unless inbox&.simplified_conversation_statuses?
+    return if open? || resolved?
+
+    errors.add(:status, 'must be open or resolved for this inbox')
   end
 
   def reset_agent_bot_when_assignee_present

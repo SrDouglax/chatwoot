@@ -214,7 +214,23 @@ export default {
     },
     showSnooze() {
       // Don't show snooze if the conversation is already snoozed/resolved/pending
-      return this.status === wootConstants.STATUS_TYPE.OPEN;
+      return (
+        !this.simplifiedStatuses &&
+        this.status === wootConstants.STATUS_TYPE.OPEN
+      );
+    },
+    simplifiedStatuses() {
+      return (
+        this.$store.getters['inboxes/getInbox'](this.inboxId)
+          ?.conversation_statuses_simplified ?? false
+      );
+    },
+    visibleStatusMenuConfig() {
+      return this.simplifiedStatuses
+        ? this.statusMenuConfig.filter(
+            option => option.key !== wootConstants.STATUS_TYPE.PENDING
+          )
+        : this.statusMenuConfig;
     },
   },
   mounted() {
@@ -299,7 +315,7 @@ export default {
       <hr class="m-1 rounded border-b border-n-weak dark:border-n-weak" />
     </template>
     <template v-if="isAllowed([MENU.STATUS, MENU.SNOOZE])">
-      <template v-for="option in statusMenuConfig">
+      <template v-for="option in visibleStatusMenuConfig">
         <MenuItem
           v-if="show(option.key) && isAllowed([MENU.STATUS])"
           :key="option.key"

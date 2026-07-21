@@ -661,6 +661,22 @@ RSpec.describe 'Inboxes API', type: :request do
         expect(response).to have_http_status(:success)
         expect(inbox.reload.allow_messages_after_resolved).to be_falsey
       end
+
+      it 'enables simplified conversation statuses and reopens pending or snoozed conversations' do
+        pending_conversation = create(:conversation, account: account, inbox: inbox, status: :pending)
+        snoozed_conversation = create(:conversation, account: account, inbox: inbox, status: :snoozed, snoozed_until: 1.day.from_now)
+
+        patch "/api/v1/accounts/#{account.id}/inboxes/#{inbox.id}",
+              headers: admin.create_new_auth_token,
+              params: valid_params.merge(conversation_statuses_simplified: true),
+              as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(inbox.reload.conversation_statuses_simplified).to be(true)
+        expect(pending_conversation.reload.status).to eq('open')
+        expect(snoozed_conversation.reload.status).to eq('open')
+        expect(snoozed_conversation.snoozed_until).to be_nil
+      end
     end
 
     context 'when an authenticated user updates email inbox' do
