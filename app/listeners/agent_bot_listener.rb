@@ -76,9 +76,13 @@ class AgentBotListener < BaseListener
     inbox.agent_bot
   end
 
-  def process_message_event(method_name, agent_bot, message, _event)
+  def process_message_event(method_name, agent_bot, message, event)
     # Only webhook bots are supported
-    payload = message.webhook_data.merge(event: method_name)
+    payload = message.webhook_data.merge({
+      event: method_name,
+      changed_attributes: extract_changed_attributes(event),
+      edit_operation: message.additional_attributes['external_edit']
+    }.compact)
     process_webhook_bot_event(agent_bot, payload)
   end
 

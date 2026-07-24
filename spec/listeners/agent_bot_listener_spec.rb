@@ -65,6 +65,48 @@ describe AgentBotListener do
     end
   end
 
+  describe '#message_updated' do
+    let!(:channel_api) { create(:channel_api, account: account) }
+    let!(:api_inbox) { channel_api.inbox }
+    let!(:api_conversation) { create(:conversation, account: account, inbox: api_inbox, assignee: user) }
+    let!(:message) do
+      create(
+        :message,
+        message_type: 'outgoing',
+        account: account,
+        inbox: api_inbox,
+        conversation: api_conversation,
+        additional_attributes: { 'external_edit' => { 'id' => 'edit-1', 'status' => 'pending' } }
+      )
+    end
+    let!(:event) do
+      Events::Base.new(
+        'message.updated',
+        Time.zone.now,
+        message: message,
+        changed_attributes: { 'content' => ['before edit', 'after edit'] }
+      )
+    end
+
+    it 'includes changed content and edit operation in the agent bot webhook' do
+      create(:agent_bot_inbox, inbox: api_inbox, agent_bot: agent_bot)
+
+      expect(AgentBots::WebhookJob).to receive(:perform_later).with(
+        agent_bot.outgoing_url,
+        message.webhook_data.merge(
+          event: 'message_updated',
+          changed_attributes: [{ 'content' => { previous_value: 'before edit', current_value: 'after edit' } }],
+          edit_operation: { 'id' => 'edit-1', 'status' => 'pending' }
+        ),
+        :agent_bot_webhook,
+        secret: agent_bot.secret,
+        delivery_id: instance_of(String)
+      ).once
+
+      listener.message_updated(event)
+    end
+  end
+
   describe '#conversation_status_changed' do
     let(:event_name) { 'conversation.status_changed' }
     let(:changed_attributes) { { status: %w[open pending] } }
