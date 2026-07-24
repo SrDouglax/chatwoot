@@ -102,7 +102,7 @@ class ActionService
   private
 
   def simplified_status?(status)
-    @conversation.inbox.simplified_conversation_statuses? && %w[pending snoozed].include?(status.to_s)
+    @conversation.inbox.conversation_statuses_simplified? && %w[pending snoozed].include?(status.to_s)
   end
 
   def log_unsupported_status(status)

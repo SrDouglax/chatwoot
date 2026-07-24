@@ -77,7 +77,7 @@ class Whatsapp::Providers::Whatsapp360DialogService < Whatsapp::Providers::BaseS
     type_content = {
       'link': attachment.download_url
     }
-    type_content['caption'] = outgoing_content if outgoing_content.present? && !%w[audio sticker].include?(type)
+    type_content['caption'] = outgoing_content if outgoing_content.present? && %w[audio sticker].exclude?(type)
     type_content['filename'] = attachment.file.filename if type == 'document'
 
     response = HTTParty.post(

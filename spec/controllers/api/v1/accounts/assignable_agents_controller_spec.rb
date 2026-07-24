@@ -62,6 +62,24 @@ RSpec.describe 'Assignable Agents API', type: :request do
         expect(response_data.size).to eq(1)
         expect(response_data.pluck(:id)).to contain_exactly(agent1.id)
       end
+
+      context 'with Agent Bots' do
+        let!(:account_bot) { create(:agent_bot, account: account, name: 'Account bot') }
+        let!(:global_bot) { create(:agent_bot, account: nil, name: 'Global bot') }
+
+        it 'returns assignable agents and accessible agent bots' do
+          get "/api/v1/accounts/#{account.id}/assignable_agents",
+              params: { inbox_ids: [inbox1.id, inbox2.id], include_agent_bots: true },
+              headers: agent1.create_new_auth_token,
+              as: :json
+
+          expect(response).to have_http_status(:success)
+
+          response_data = response.parsed_body['payload']
+          expect(response_data.pluck('assignee_type')).to include('User', 'AgentBot')
+          expect(response_data.pluck('name')).to contain_exactly(agent1.name, account_bot.name, global_bot.name)
+        end
+      end
     end
   end
 end
