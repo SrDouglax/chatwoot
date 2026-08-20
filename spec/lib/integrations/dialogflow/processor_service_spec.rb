@@ -123,6 +123,11 @@ describe Integrations::Dialogflow::ProcessorService do
     context 'when conversation is resolved' do
       let(:conversation) { create(:conversation, account: account, status: :resolved) }
 
+      before do
+        message
+        conversation.update!(status: :resolved)
+      end
+
       it 'returns nil' do
         expect(processor.perform).to be_nil
       end

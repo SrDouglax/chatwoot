@@ -3,6 +3,7 @@
 # Table name: channel_whatsapp
 #
 #  id                             :bigint           not null, primary key
+#  business_management_token      :text
 #  message_templates              :jsonb
 #  message_templates_last_updated :datetime
 #  phone_number                   :string           not null
@@ -27,6 +28,7 @@ class Channel::Whatsapp < ApplicationRecord
 
   self.table_name = 'channel_whatsapp'
   EDITABLE_ATTRS = [:phone_number, :provider, { provider_config: {} }].freeze
+  encrypts :business_management_token if Chatwoot.encryption_configured?
 
   # default at the moment is 360dialog lets change later.
   PROVIDERS = %w[default whatsapp_cloud].freeze
@@ -76,6 +78,16 @@ class Channel::Whatsapp < ApplicationRecord
 
   def append_agent_name?
     ActiveModel::Type::Boolean.new.cast(provider_config&.[]('append_agent_name'))
+  end
+
+  def template_access_token
+    return provider_config['api_key'] unless ChatwootApp.chatwoot_cloud? && provider_config['source'] == 'embedded_signup'
+
+    business_management_token.presence || provider_config['api_key']
+  end
+
+  def serializable_hash(options = nil)
+    super.except('business_management_token')
   end
 
   # Enables voice: turns calling on at Meta (idempotent), then re-registers webhooks
@@ -173,3 +185,5 @@ class Channel::Whatsapp < ApplicationRecord
     provider == 'whatsapp_cloud' && provider_config['source'] != 'embedded_signup'
   end
 end
+
+Channel::Whatsapp.prepend_mod_with('Channel::Whatsapp')
