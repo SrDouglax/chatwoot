@@ -390,7 +390,12 @@ const handleSendAnyway = async () => {
   const request = pendingConversationRequest.value;
   existingConversationDialogRef.value?.close();
   resetExistingConversationDialog();
-  if (request) await createConversation(request);
+  if (!request) return;
+
+  await createConversation({
+    ...request,
+    payload: { ...request.payload, forceNewConversation: true },
+  });
 };
 
 const handleViewExistingConversation = () => {

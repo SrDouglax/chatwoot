@@ -8,9 +8,14 @@ class ConversationBuilder
   private
 
   def look_up_exising_conversation
+    return if force_new_conversation?
     return unless @contact_inbox.inbox.lock_to_single_conversation?
 
     @contact_inbox.conversations.last
+  end
+
+  def force_new_conversation?
+    ActiveModel::Type::Boolean.new.cast(params[:force_new_conversation])
   end
 
   def create_new_conversation
